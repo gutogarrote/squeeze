@@ -1,0 +1,131 @@
+import React, { useState } from 'react';
+import TaskListEditor from '../components/TaskListEditor';
+import Sheet, { Button } from '../components/Sheet';
+import { formatClock, formatMinutes, nextOccurrence } from '../lib/clock';
+import { planSummary, totalMinutes } from '../lib/engine';
+
+function Hero({ draft, now }) {
+  const deadlineMs = nextOccurrence(draft.deadline, now);
+  if (!draft.tasks.length || !Number.isFinite(deadlineMs)) {
+    return <p className="text-zinc-400">Adicione tarefas para saber a que horas começar.</p>;
+  }
+  const s = planSummary(draft.tasks, deadlineMs, now);
+  return (
+    <div aria-live="polite">
+      <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">{s.early ? 'Comece às' : 'Deveria ter começado às'}</p>
+      <p className={`mt-1 text-7xl font-semibold tabular-nums tracking-tight ${s.early ? 'text-lime-300' : 'text-amber-300'}`} data-testid="ideal-start">
+        {formatClock(s.idealStartMs)}
+      </p>
+      {s.early ? (
+        <p className="mt-2 text-zinc-300">
+          Faltam {formatMinutes(s.untilStartMs)} para o início ideal. Se começar agora, sobra <strong className="text-lime-200">+{formatMinutes(s.bufferIfStartNowMs)} de folga</strong>.
+        </p>
+      ) : (
+        <p className="mt-2 text-amber-100">
+          Atrasado {formatMinutes(-s.untilStartMs)}. Faltam <strong>{formatMinutes(s.missingMs)}</strong>: começando agora, as tarefas ficam com {Math.floor(s.factor * 100)}% da estimativa.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RoutinesSheet({ templates, currentId, onOpen, onDelete, onNew, onClose }) {
+  const [confirming, setConfirming] = useState(null);
+  return (
+    <Sheet title="Rotinas salvas" onClose={onClose}
+      footer={<Button variant="secondary" className="w-full" onClick={onNew}>Nova rotina</Button>}>
+      {!templates.length && <p className="py-4 text-zinc-400">Nenhuma rotina salva ainda. Use “Salvar” no planejamento.</p>}
+      <ul className="space-y-2">
+        {templates.map((t) => (
+          <li key={t.id} className={`flex items-center gap-2 rounded-xl p-3 ring-1 ${t.id === currentId ? 'bg-lime-300/10 ring-lime-300/30' : 'bg-zinc-900 ring-white/5'}`}>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-zinc-100">{t.name}</p>
+              <p className="text-sm text-zinc-500">{t.tasks.length} tarefas · {formatMinutes(totalMinutes(t.tasks) * 60000)} · até {t.deadline}</p>
+            </div>
+            {confirming === t.id ? (
+              <>
+                <Button variant="danger" onClick={() => { onDelete(t.id); setConfirming(null); }}>Excluir</Button>
+                <Button variant="ghost" onClick={() => setConfirming(null)}>Não</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" aria-label={`Abrir ${t.name}`} onClick={() => onOpen(t)}>Abrir</Button>
+                <Button variant="ghost" aria-label={`Excluir ${t.name}`} onClick={() => setConfirming(t.id)}>×</Button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Sheet>
+  );
+}
+
+export default function PlanScreen({
+  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onNew, onShare, onSettings,
+}) {
+  const [routinesOpen, setRoutinesOpen] = useState(false);
+  const items = draft.tasks.map((t) => ({ key: t.id, ...t }));
+  const setItems = (next) => onChange({ ...draft, tasks: next.map(({ key, name, minutes }) => ({ id: key, name, minutes })) });
+  const saved = templates.some((t) => t.id === draft.templateId);
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-32 pt-4">
+      <header className="flex items-center gap-2">
+        <span className="mr-auto text-sm font-semibold tracking-[0.3em] text-zinc-500">SQUEEZE</span>
+        <Button variant="ghost" onClick={() => setRoutinesOpen(true)}>Rotinas</Button>
+        <Button variant="ghost" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
+      </header>
+
+      <input
+        aria-label="Nome da rotina"
+        value={draft.name}
+        maxLength={80}
+        placeholder="Nome da rotina"
+        onChange={(e) => onChange({ ...draft, name: e.target.value })}
+        className="mt-6 w-full bg-transparent text-3xl font-semibold text-zinc-100 placeholder:text-zinc-700 focus:outline-none"
+      />
+
+      <section className="mt-5 rounded-3xl bg-zinc-900/80 p-5 ring-1 ring-white/5">
+        <Hero draft={draft} now={now} />
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-zinc-500">Total</p>
+            <p className="text-xl font-medium tabular-nums text-zinc-100">{formatMinutes(totalMinutes(draft.tasks) * 60000)}</p>
+          </div>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-zinc-500">Deadline</span>
+            <input type="time" aria-label="Deadline" value={draft.deadline} required
+              onChange={(e) => e.target.value && onChange({ ...draft, deadline: e.target.value })}
+              className="block w-full bg-transparent text-xl font-medium tabular-nums text-zinc-100 focus:outline-none [color-scheme:dark]" />
+          </label>
+        </div>
+      </section>
+
+      <h2 className="mb-2 mt-7 text-sm font-medium uppercase tracking-widest text-zinc-500">Tarefas</h2>
+      <TaskListEditor items={items} onChange={setItems} />
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button variant="secondary" onClick={onSave} disabled={!draft.tasks.length}>{saved ? 'Salvar alterações' : 'Salvar rotina'}</Button>
+        {saved && <Button variant="ghost" onClick={onSaveAsNew}>Salvar como nova</Button>}
+        <Button variant="ghost" onClick={onShare} disabled={!draft.tasks.length}>Copiar link</Button>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-zinc-950 via-zinc-950/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8">
+        <div className="mx-auto max-w-xl">
+          <Button variant="primary" className="w-full py-4 text-lg" disabled={!draft.tasks.length} onClick={onStart}>Começar</Button>
+        </div>
+      </div>
+
+      {routinesOpen && (
+        <RoutinesSheet
+          templates={templates}
+          currentId={draft.templateId}
+          onClose={() => setRoutinesOpen(false)}
+          onOpen={(t) => { onOpenTemplate(t); setRoutinesOpen(false); }}
+          onDelete={onDeleteTemplate}
+          onNew={() => { onNew(); setRoutinesOpen(false); }}
+        />
+      )}
+    </div>
+  );
+}

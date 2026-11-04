@@ -6,25 +6,25 @@ tarefas enquanto a atual não é concluída. A especificação vigente é [speci
 AGENTS.md contém as convenções de contribuição. [PROGRESS.md](PROGRESS.md) registra o andamento:
 atualize-o a cada etapa concluída (o que foi feito, como foi verificado, próximos passos).
 
-## Estado atual
+## Arquitetura
 
-O código em `app/` ainda é a base herdada do Ver o Tempo (Rotina da Nina) e está sendo adaptado.
-Antes de mudar algo, confira se a parte é para **reaproveitar** ou **substituir** (specifications.md §15).
+Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
 
-Reaproveitar:
+- `lib/engine.js`: motor de tempo (specifications.md §6). Funções puras que recebem `nowMs` e devolvem
+  uma nova execução: `startRun`, `completeTask`, `postponeTask`, `reactivateTask`, `releaseBuffer`,
+  `addTimeToCurrent`, `setDeadline`/`extendDeadline`, `applyEdit`, `viewRun` (leitura) e `planSummary`.
+  Uma operação sem efeito devolve o mesmo objeto (a UI usa isso para o card "balançar").
+- `lib/split.js` (divisão proporcional exata), `lib/clock.js` (próxima ocorrência do deadline, formatos),
+  `lib/routineLink.js` (link v3, ver `docs/url-rotina-v3.md`), `lib/storage.js` (localStorage validado),
+  `lib/alerts.js` + `lib/sound.js` (limites dos alertas e toques sintetizados com Web Audio).
+- `App.jsx`: estado (rascunho, rotinas salvas, execução, ajustes), importação de links, encerramento.
+- `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
+  `TaskListEditor`, `RunEditor`, `EndSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
+- `hooks/`: `useNow` (relógio de 1 s), `useAlerts`, `useRestMode`, `useScreenWakeLock`.
+- `pwa/` e `instructions/`: service worker gerado no build e página `/instrucoes` a partir do doc v3.
 
-- Vite + React + Tailwind; PWA em `app/src/pwa/` (ver [docs/pwa.md](docs/pwa.md)).
-- `hooks/useScreenWakeLock.js` (manter a tela acesa).
-- `splitProportional` e `splitCapped` em `lib/schedule.js` (divisão proporcional com arredondamento exato).
-- Gramática de nomes de `lib/routineUrl.js` (`_` = espaço, escapes `~XX`), base do link v3.
-- Deploy na Cloudflare (abaixo) e sons em `app/public/sounds/`.
-
-Substituir:
-
-- O motor de agenda de `lib/schedule.js`: no Ver o Tempo as tarefas terminam quando o horário passa.
-  **No Squeeze nenhuma tarefa termina automaticamente.**
-- A UI infantil (`components/fita/`, `ParentMenu`, `DefaultRoutineEditor`), `taskCatalog.json`,
-  a estrutura `monday` com manhã/noite, `routines.json`/`defaultRoutines.json` e a sessão em memória.
+Chaves de storage: `squeeze:draft`, `squeeze:templates`, `squeeze:run`, `squeeze:settings`,
+`squeeze:keep-screen-on`. `App` aceita `clock` (padrão `Date.now`) para testes com tempo controlado.
 
 ## Regras do motor de tempo
 
@@ -35,10 +35,11 @@ Substituir:
   usar os exemplos de §6.4 como testes.
 - Tirar tempo: folga primeiro, depois pendentes proporcionalmente aos orçamentos. Dar tempo:
   pendentes proporcionalmente às referências; sem referência, vai para a folga.
+- A tarefa atual é sempre a primeira pendente na ordem; concluídas ficam no lugar.
 
 ## Comandos
 
-Node 26.13.0 (`.nvmrc`, engines); Python 3 no PATH é necessário ao teste da documentação.
+Node 26.13.0 (`.nvmrc`, engines).
 Todos os comandos npm são executados em `app/`:
 
 ```bash
@@ -52,12 +53,10 @@ npm audit
 
 ## Testes
 
-- A suíte herdada cobre o comportamento do Ver o Tempo. Ao remover ou substituir um comportamento
-  herdado, remova ou reescreva os testes correspondentes no mesmo commit e diga isso na mensagem.
-- Testes de infraestrutura (PWA, wake lock, build) continuam passando enquanto a peça for mantida.
-- Todo comportamento novo tem teste. Sem `skip`/`todo`.
-- Exceções de lint para acesso ao DOM são por linha e justificadas (geometria em jsdom); não desligue
-  regras globalmente. Não use `npm audit fix --force`; avisos de audit em ferramentas de dev são dívida conhecida.
+- Todo comportamento novo tem teste. Sem `skip`/`todo`. Os exemplos de specifications.md §6.4 estão
+  em `lib/engine.test.js`; a interface é testada em `App.test.jsx` com relógio controlado e swipes simulados.
+- Exceções de lint para acesso ao DOM são por linha e justificadas; não desligue regras globalmente.
+  Não use `npm audit fix --force`; avisos de audit em ferramentas de dev são dívida conhecida.
 - CI (`.github/workflows/ci.yml`) roda `npm ci`, lint sem avisos, testes e build. Não publica.
 
 ## Implantação: Cloudflare Workers Static Assets
