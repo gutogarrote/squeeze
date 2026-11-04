@@ -1,4 +1,4 @@
-# PWA — Ver o Tempo (fase 4)
+# PWA — Squeeze (fase 4)
 
 ## Instalar
 
@@ -7,12 +7,12 @@ Abra a versão de produção em HTTPS, espere a primeira visita terminar com int
 sem rede. A primeira visita offline não funciona. O site também funciona sem instalar.
 
 - **Android/Chrome:** menu do navegador → **Instalar app** ou **Adicionar à tela inicial**;
-  confirme Ver o Tempo. A apresentação depende da versão do navegador.
+  confirme Squeeze. A apresentação depende da versão do navegador.
 - **iPhone/iPad/Safari:** compartilhar → **Adicionar à Tela de Início** → adicionar.
   Se houver a opção, mantenha **Abrir como App** ativada.
 - **Computador/Chrome/Edge:** ícone de instalação na barra de endereço ou menu → instalar.
 
-O manifest tem `id`, `start_url` e `scope` `/`, nome Ver o Tempo, tema/fundo creme
+O manifest tem `id`, `start_url` e `scope` `/`, nome Squeeze, tema/fundo creme
 `#FFF6E9`, ícones próprios 192/512 e versões maskable com o desenho dentro do círculo
 seguro central (raio inferior a 40% da largura). `icons/*.svg` são as fontes vetoriais
 originais: relógio amarelo e fita colorida, sem redesenhar as telas. O ícone Apple tem
@@ -92,7 +92,7 @@ conteúdo personalizado, requests externos ou outros métodos. Assets `/assets/`
 versão anterior só são usados quando seu caminho fingerprinted é solicitado; nomes
 estáveis sempre pertencem ao worker ativo. Ranges simples de mídia têm respostas 206/416.
 
-Caches `ver-o-tempo-shell-<hash>` anteriores são mantidos deliberadamente, pois outras
+Caches `squeeze-shell-<hash>` anteriores são mantidos deliberadamente, pois outras
 abas podem estar usando seus assets. Não há coleta automática nesta fase: o espaço pode
 crescer a cada release (o shell inicial tem cerca de 0,5 MB, sem compressão HTTP), sujeito
 à quota/remoção do navegador. Nenhum cache de outro aplicativo ou storage é apagado.
@@ -151,7 +151,7 @@ manual para uma versão PWA anterior já publicada continua:
 
 ```bash
 # A partir de app/; somente com autorização e autenticação:
-npx wrangler rollback <version-id> --name ver-o-tempo --config ../wrangler.jsonc
+npx wrangler rollback <version-id> --name squeeze --config ../wrangler.jsonc
 ```
 
 O servidor volta à versão escolhida; os clientes precisam estar online para descobrir

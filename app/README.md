@@ -1,4 +1,4 @@
-# App Ver o Tempo
+# App Squeeze
 
 Veja o [README principal](../README.md), [guia técnico](../CLAUDE.md),
 [contrato de URL](../docs/url-rotina.md) e [guia PWA](../docs/pwa.md).

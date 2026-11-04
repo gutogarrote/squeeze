@@ -2,11 +2,11 @@
 
 A versão 2 está implementada e é o formato canônico de novos links: `serializeRoutineUrl` gera v2. O parser continua aceitando v1, inclusive o formato antigo com pipes; `serializeLegacyRoutineUrl` preserva a serialização v1. Este documento é completo e pode ser entregue sozinho a uma IA para construir links. Não é uma proposta de implementação.
 
-A fonte canônica é `docs/url-rotina-v2.md`. O build gera deste mesmo texto a página humana `/instrucoes` e o arquivo `/instrucoes.md`, sem depender de JavaScript. No host oficial, use [instruções humanas](https://ver-o-tempo.ggarrote.workers.dev/instrucoes) ou [Markdown canônico para máquinas](https://ver-o-tempo.ggarrote.workers.dev/instrucoes.md).
+A fonte canônica é `docs/url-rotina-v2.md`. O build gera deste mesmo texto a página humana `/instrucoes` e o arquivo `/instrucoes.md`, sem depender de JavaScript. No host oficial, use [instruções humanas](https://squeeze.ggarrote.workers.dev/instrucoes) ou [Markdown canônico para máquinas](https://squeeze.ggarrote.workers.dev/instrucoes.md).
 
 ## Como construir um link
 
-Use a base `https://ver-o-tempo.ggarrote.workers.dev/` e exatamente um parâmetro `rotina`. Escolha o período, preserve a ordem solicitada, consulte os IDs abaixo e atribua durações inteiras em minutos. Sempre inclua o horário final explicitamente, exceto quando a pessoa pedir os padrões. Não invente tarefas, durações, período ou horário essenciais: pergunte o que faltar. Não adivinhe códigos; use nome personalizado quando não existir correspondência exata no catálogo. Não crie novos IDs.
+Use a base `https://squeeze.ggarrote.workers.dev/` e exatamente um parâmetro `rotina`. Escolha o período, preserve a ordem solicitada, consulte os IDs abaixo e atribua durações inteiras em minutos. Sempre inclua o horário final explicitamente, exceto quando a pessoa pedir os padrões. Não invente tarefas, durações, período ou horário essenciais: pergunte o que faltar. Não adivinhe códigos; use nome personalizado quando não existir correspondência exata no catálogo. Não crie novos IDs.
 
 Calcule o cronograma de trás para frente quando houver horário final: início = final menos soma das durações; cada tarefa começa quando a anterior termina. Por exemplo, banho 20 min, jantar 25 min e mãos + dentes 5 min terminando às 19:30 começam às 18:40, 19:00 e 19:25. A duração de uma combinação é TOTAL, não por ID. Se o cálculo atravessar meia-noite, explique o dia anterior; o link não codifica data.
 
@@ -102,13 +102,13 @@ Cada linha fornece o valor de `rotina`, o link inteiro e o resultado esperado. T
 
 | Caso | Valor | Link | Resultado |
 | --- | --- | --- | --- |
-| Noite e combinação | `2.n.ba-20.ja-25.ma-de-5.1930` | [Abrir noite](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.ba-20.ja-25.ma-de-5.1930) | Banho 20, Jantar 25, Lavar as mãos + Escovar os dentes 5; final 19:30 |
-| Manhã com repetição | `2.m.xi-5.ro-10.xi-5.0720` | [Abrir manhã](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.m.xi-5.ro-10.xi-5.0720) | Fazer xixi 5, Trocar de roupa 10, Fazer xixi 5; final 07:20 |
-| Hífens e último split | `2.n.~pré-treino-5.~Plano-2-5.2030` | [Abrir hífens](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.~pr%C3%A9-treino-5.~Plano-2-5.2030) | pré-treino 5, Plano-2 5; ambos ✨/#CCCCCC; final 20:30 |
-| Pontuação e Unicode | `2.n.~pré-treino_~2B_0~2E5_litros_🍄_~26_50~25-5.1900` | [Abrir pontuação](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.~pr%C3%A9-treino_~2B_0~2E5_litros_%F0%9F%8D%84_~26_50~25-5.1900) | pré-treino + 0.5 litros 🍄 & 50%; 5 min, ✨/#CCCCCC; final 19:00 |
-| Literais sem dupla expansão | `2.n.~Texto_~7E2E_~2520-3.2030` | [Abrir literais](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.~Texto_~7E2E_~2520-3.2030) | Texto ~2E %20; 3 min; final 20:30 |
-| Emoji no nome | `2.n.~🍄_Cogumelos_mágicos-3.2030` | [Abrir emoji no nome](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.~%F0%9F%8D%84_Cogumelos_m%C3%A1gicos-3.2030) | 🍄 Cogumelos mágicos; 3 min, ícone ✨, cor #CCCCCC; final 20:30 |
-| Ordem de combinação | `2.n.de-ma-7.ma-ma-2.2030` | [Abrir combinações](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.de-ma-7.ma-ma-2.2030) | Escovar os dentes + Lavar as mãos, 🪥🧼/#a855f7, 7 min; Lavar as mãos + Lavar as mãos, 🧼🧼/#34d399, 2 min; final 20:30 |
+| Noite e combinação | `2.n.ba-20.ja-25.ma-de-5.1930` | [Abrir noite](https://squeeze.ggarrote.workers.dev/?rotina=2.n.ba-20.ja-25.ma-de-5.1930) | Banho 20, Jantar 25, Lavar as mãos + Escovar os dentes 5; final 19:30 |
+| Manhã com repetição | `2.m.xi-5.ro-10.xi-5.0720` | [Abrir manhã](https://squeeze.ggarrote.workers.dev/?rotina=2.m.xi-5.ro-10.xi-5.0720) | Fazer xixi 5, Trocar de roupa 10, Fazer xixi 5; final 07:20 |
+| Hífens e último split | `2.n.~pré-treino-5.~Plano-2-5.2030` | [Abrir hífens](https://squeeze.ggarrote.workers.dev/?rotina=2.n.~pr%C3%A9-treino-5.~Plano-2-5.2030) | pré-treino 5, Plano-2 5; ambos ✨/#CCCCCC; final 20:30 |
+| Pontuação e Unicode | `2.n.~pré-treino_~2B_0~2E5_litros_🍄_~26_50~25-5.1900` | [Abrir pontuação](https://squeeze.ggarrote.workers.dev/?rotina=2.n.~pr%C3%A9-treino_~2B_0~2E5_litros_%F0%9F%8D%84_~26_50~25-5.1900) | pré-treino + 0.5 litros 🍄 & 50%; 5 min, ✨/#CCCCCC; final 19:00 |
+| Literais sem dupla expansão | `2.n.~Texto_~7E2E_~2520-3.2030` | [Abrir literais](https://squeeze.ggarrote.workers.dev/?rotina=2.n.~Texto_~7E2E_~2520-3.2030) | Texto ~2E %20; 3 min; final 20:30 |
+| Emoji no nome | `2.n.~🍄_Cogumelos_mágicos-3.2030` | [Abrir emoji no nome](https://squeeze.ggarrote.workers.dev/?rotina=2.n.~%F0%9F%8D%84_Cogumelos_m%C3%A1gicos-3.2030) | 🍄 Cogumelos mágicos; 3 min, ícone ✨, cor #CCCCCC; final 20:30 |
+| Ordem de combinação | `2.n.de-ma-7.ma-ma-2.2030` | [Abrir combinações](https://squeeze.ggarrote.workers.dev/?rotina=2.n.de-ma-7.ma-ma-2.2030) | Escovar os dentes + Lavar as mãos, 🪥🧼/#a855f7, 7 min; Lavar as mãos + Lavar as mãos, 🧼🧼/#34d399, 2 min; final 20:30 |
 
 ## Importação, falhas e campos não suportados
 
@@ -125,7 +125,7 @@ Os atalhos `/0630`, `/0720` ou `/1930`, sem barra final, carregam tarefas PADRÃ
 ## Prompt pronto para qualquer agente
 
 ```text
-Use estas instruções oficiais v2 e o catálogo completo acima para construir um link de rotina do Ver-o-Tempo em https://ver-o-tempo.ggarrote.workers.dev/.
+Use estas instruções oficiais v2 e o catálogo completo acima para construir um link de rotina do Squeeze em https://squeeze.ggarrote.workers.dev/.
 Minha solicitação: [tarefas em ordem, durações, período e horário final desejados].
 Pergunte os dados essenciais que faltarem; não invente tarefas, minutos, período ou horário. Não adivinhe códigos nem acrescente novos IDs, parâmetros irrelevantes ou campos ocultos. Use IDs somente para correspondências exatas do catálogo; outras tarefas são nomes personalizados com ✨/#CCCCCC. Emoji no nome não muda o ícone.
 Inclua sempre o horário final hhmm explicitamente, salvo se eu pedir os padrões. Preserve ordem e repetições; em combinações os minutos são totais. Calcule o início e os intervalos de trás para frente quando aplicável, esclarecendo travessia de meia-noite e uso do horário local sem timezone no link.

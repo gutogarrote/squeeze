@@ -31,6 +31,7 @@ test('every documented routine link parses, uses only supported fields, and matc
   expect(wireValues).toHaveLength(links.length);
   links.forEach((link, i) => {
     const url = new URL(link);
+    expect(url.origin).toBe('https://squeeze.ggarrote.workers.dev');
     expect([...url.searchParams.keys()]).toEqual(['rotina']);
     expect(url.pathname).toBe('/');
     expect(url.hash).toBe('');
