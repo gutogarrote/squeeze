@@ -2,9 +2,9 @@
 
 *There's always room for one more thing.*
 
-Esta especificação substitui a da Rotina da Nina (Ver o Tempo). O código em `app/` ainda é a
-base herdada do Ver o Tempo e será adaptado por etapas (ver §15). A visão original do
-Ver o Tempo continua em `original_specification.md`, apenas como histórico.
+Esta especificação substitui a da Rotina da Nina (Ver o Tempo). A visão original do
+Ver o Tempo continua em `original_specification.md`, apenas como histórico. O andamento da
+implementação está em `PROGRESS.md`.
 
 ## 1. Conceito
 
@@ -231,8 +231,7 @@ Regras:
   estourada toca o toque intenso assim que volta a ser a atual.
 - Um +5 min que leva o restante de volta para cima de um limite rearma aquele toque.
 - O usuário liga e desliga os sons. Os alertas nunca mudam o estado das tarefas.
-- Os arquivos `5-minutes-remaining.mp3`, `1-minute-remaining.mp3` e `task-complete.mp3` já existem em
-  `app/public/sounds/` e podem ser substituídos por sons mais adequados.
+- Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
 
 Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
 
@@ -308,7 +307,7 @@ Exemplo (o plano de §3):
 - Abrir um link cria uma rotina em planejamento, sem sobrescrever modelos salvos (o usuário pode salvá-la).
   Se houver uma execução ativa, o app pergunta antes de substituí-la.
 - Links v1/v2 do Ver o Tempo não precisam ser aceitos.
-- A gramática deve ser documentada para que agentes de IA gerem links (substituindo `docs/url-rotina-v2.md`).
+- A gramática está documentada em `docs/url-rotina-v3.md`, para que agentes de IA gerem links; o build a publica em `/instrucoes`.
 
 ## 15. Diretrizes de desenvolvimento
 
@@ -317,26 +316,12 @@ Exemplo (o plano de §3):
 - O motor de tempo fica em funções puras (`app/src/lib/`) que recebem `nowMs`, com os exemplos de §6.4
   como testes.
 
-### Reaproveitar do Ver o Tempo
+### Herança do Ver o Tempo
 
-Vite/React/Tailwind, PWA (`app/src/pwa`), `useScreenWakeLock`, as funções de divisão proporcional
-(`splitProportional`, `splitCapped` em `lib/schedule.js`), a gramática de nomes de `lib/routineUrl.js`
-e o deploy na Cloudflare.
-
-### Substituir
-
-O motor de agenda (no Ver o Tempo as tarefas terminam sozinhas quando o horário passa; no Squeeze
-nunca), a UI infantil (`components/fita`), o catálogo `taskCatalog.json`, a estrutura `monday`
-manhã/noite e a sessão em memória.
-
-### Ordem sugerida
-
-1. Motor de tempo (§6) com testes.
-2. Planejamento, início ideal e botão Começar.
-3. Execução com swipes, folga, +5 min, atraso e persistência.
-4. Modo de edição durante a execução.
-5. Rotinas salvas e link v3.
-6. Alertas sonoros e modo descanso.
+Foram mantidos Vite/React/Tailwind, a PWA (`app/src/pwa`), `useScreenWakeLock`, as funções de divisão
+proporcional (`lib/split.js`), a gramática de nomes dos links e o deploy na Cloudflare. O motor de agenda
+(no Ver o Tempo as tarefas terminam sozinhas quando o horário passa), a UI infantil, o catálogo de
+tarefas, a estrutura manhã/noite e a sessão em memória foram substituídos.
 
 ## 16. Fora do MVP
 

@@ -1,9 +1,9 @@
 # App Squeeze
 
-Veja o [README principal](../README.md), [guia técnico](../CLAUDE.md),
-[contrato de URL](../docs/url-rotina.md) e [guia PWA](../docs/pwa.md).
+Veja o [README principal](../README.md), o [guia técnico](../CLAUDE.md),
+o [formato de links v3](../docs/url-rotina-v3.md) e o [guia PWA](../docs/pwa.md).
 
-Use Node 22.23.3 e Python 3 no PATH. Nesta pasta:
+Use Node 26.13.0. Nesta pasta:
 
 ```bash
 npm ci
@@ -14,8 +14,5 @@ npm run build
 npm run preview
 ```
 
-Vite gera `build/` (ignorado pelo Git). Somente produção/preview registra o worker
-gerado, para instalação/offline após a primeira visita. Fontes e ícones são locais.
-A atualização pede ação e fica bloqueada durante os editores; configurações salvas
-permanecem, sessão reinicia com reload. Não há backend, sync, alarmes ou deploy remoto
-realizado. Consulte o guia PWA para limites, validação de dados e rollback seguro.
+Vite gera `build/` (ignorado pelo Git). Somente produção/preview registra o service worker,
+para instalação e uso offline após a primeira visita.

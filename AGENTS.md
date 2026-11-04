@@ -8,13 +8,13 @@ The current spec is `specifications.md` (Portuguese). `CLAUDE.md` holds the tech
 - Root docs: `specifications.md` (current spec), `CLAUDE.md`, `README.md`, `PROGRESS.md`, `docs/`.
   `original_specification.md` and `ver-o-tempo-ui-handoff.md` are Ver o Tempo history only.
 - App code in `app/` (Vite + React + Tailwind):
-  - `app/src/lib/` pure logic (time engine, URL parsing); `app/src/components/` UI; `app/src/hooks/`; `app/src/pwa/`.
-  - `app/public/` static assets (`sounds/`, `icons/`, `fonts/`, `manifest.json`).
-- The code is still the inherited Ver o Tempo base being adapted. See `specifications.md` §15 for
-  what to reuse and what to replace before changing a module.
+  - `app/src/lib/` pure logic (time engine, links, storage, alerts); `app/src/screens/` and
+    `app/src/components/` UI; `app/src/hooks/`; `app/src/pwa/`; `app/src/instructions/`.
+  - `app/public/` static assets (`icons/`, `manifest.json`, `_headers`).
+- The architecture is described in `CLAUDE.md`. Link format: `docs/url-rotina-v3.md`.
 
 ## Build, Test, and Development Commands
-From `app/` (Node 26.13.0 from `.nvmrc`; Python 3 on PATH for doc tests):
+From `app/` (Node 26.13.0 from `.nvmrc`):
 - `npm ci`: install dependencies.
 - `npm start`: dev server at `http://localhost:3000` (no service worker in dev).
 - `npm test`: Vitest in watch mode; `npm test -- --run` for a single run.
@@ -35,9 +35,8 @@ From `app/` (Node 26.13.0 from `.nvmrc`; Python 3 on PATH for doc tests):
 - Vitest + React Testing Library; tests colocated as `*.test.js` / `*.test.jsx`.
 - Interaction tests query by role/label, not implementation details.
 - Every new behavior gets tests; the examples in spec §6.4 are required time-engine tests.
-- Inherited Ver o Tempo tests may be removed or rewritten only together with the behavior they cover,
-  stated in the commit message. No `skip`/`todo`. DOM lint exceptions are per line and justified;
-  never disable rules globally.
+- UI tests pass a controlled `clock` to `App` and simulate swipes with pointer events.
+- No `skip`/`todo`. DOM lint exceptions are per line and justified; never disable rules globally.
 
 ## Commit & Pull Request Guidelines
 - Commits: imperative, concise subject (e.g., "Add squeeze time engine").

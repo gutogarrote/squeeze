@@ -2,49 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: Nunito;
-  font-style: normal;
-  font-weight: 200 1000;
-  font-display: swap;
-  src: url('./assets/fonts/Nunito.woff2') format('woff2');
+:root {
+  color-scheme: dark;
 }
 
-@font-face {
-  font-family: Fredoka;
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-  src: url('./assets/fonts/Fredoka.woff2') format('woff2');
-}
-
+html,
 body {
   margin: 0;
-  background: #FFF6E9;
-  font-family: Nunito, system-ui, sans-serif;
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
-@keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+/* A gesture that does nothing: the card slides and comes back. */
+@keyframes wobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+}
+.animate-wobble { animation: wobble 380ms ease-out; }
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible,
+[role='group']:focus-visible {
+  outline: 2px solid #bef264;
+  outline-offset: 2px;
 }
 
-@keyframes urgent {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }
-
-.no-scrollbar { scrollbar-width: none; }
-.no-scrollbar::-webkit-scrollbar { width: 0; height: 0; display: none; }
-
-/* Buttons of the parents' controls (edit mode, menu, closing): pressed, keyboard focus and
-   disabled states on top of the inline styles. */
-.fita-btn { transition: transform .08s ease, filter .15s ease; -webkit-tap-highlight-color: transparent; }
-.fita-btn:not(:disabled):hover { filter: brightness(.97); }
-.fita-btn:not(:disabled):active { transform: translateY(1px) scale(.97); filter: brightness(.93); }
-.fita-btn:focus-visible { outline: 3px solid #2A2118; outline-offset: 2px; }
-.fita-btn:disabled { cursor: not-allowed; }
-input[type=number].no-spin::-webkit-inner-spin-button,
-input[type=number].no-spin::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.fita-menu-item:hover, .fita-menu-item:focus-visible { background: #FFF6E9 !important; }
-input[type=number].no-spin { -moz-appearance: textfield; appearance: textfield; }

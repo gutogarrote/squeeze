@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { registerPwa } from '../pwa/registerPwa';
-import { prepareUpdateReload } from '../pwa/updateReload';
 
-const reloadPage = () => { prepareUpdateReload(); window.location.reload(); };
+const reloadPage = () => window.location.reload();
 function reloadSafely(reload, onError) {
   try { reload(); }
-  catch (_) { onError('Não foi possível atualizar com segurança. Suas rotinas permanecem salvas; tente novamente após reabrir o app.'); }
+  catch (_) { onError('Não foi possível atualizar com segurança. Suas rotinas continuam salvas; tente novamente após reabrir o app.'); }
 }
 
 export default function PwaUpdateNotice({ editing, reload = reloadPage, inline = false }) {
@@ -48,14 +47,14 @@ export default function PwaUpdateNotice({ editing, reload = reloadPage, inline =
   }
 
   if (dismissed || (!waiting && !ready && !error)) return null;
-  // `inline`: inside the phone screen, where a fixed notice would cover the final footer.
-  const position = editing || inline ? 'relative mx-3 mt-3 md:mx-auto' : 'fixed bottom-3 left-3 right-3 mx-auto';
+  // `inline`: placed in the page flow instead of floating at the top.
+  const position = inline ? 'relative mx-3 mt-3 md:mx-auto' : 'fixed left-3 right-3 top-3 mx-auto';
   return (
-    <aside role="status" className={`${position} z-50 max-w-xl rounded-xl border border-amber-300 bg-[#FFF6E9] p-3 text-[#2A2118] shadow-lg`}>
-      <p>{error || 'Nova versão disponível. Atualizar recarrega esta aba e reinicia a sessão; suas rotinas salvas permanecem.'}</p>
+    <aside role="status" className={`${position} z-50 max-w-xl rounded-xl bg-zinc-800 p-3 text-sm text-zinc-100 shadow-xl ring-1 ring-lime-300/30`}>
+      <p>{error || 'Nova versão disponível. Atualizar recarrega o app; a rotina em andamento e as rotinas salvas continuam.'}</p>
       {!error && <>
         {editing && <p>Salve ou cancele a edição antes de atualizar.</p>}
-        <button type="button" disabled={editing || applying} onClick={applyUpdate} className="mt-2 rounded-lg bg-[#FFB703] px-4 py-2 font-bold disabled:opacity-50">
+        <button type="button" disabled={editing || applying} onClick={applyUpdate} className="mt-2 rounded-lg bg-lime-300 px-4 py-2 font-semibold text-zinc-950 disabled:opacity-50">
           {applying ? 'Atualizando…' : 'Atualizar agora'}
         </button>
       </>}
