@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 const origin = 'https://example.test';
 const source = readFileSync('src/pwa/service-worker.js', 'utf8');
-const currentName = 'ver-o-tempo-shell-test';
+const currentName = 'squeeze-shell-test';
 
 function worker() {
   const listeners = {};
@@ -19,7 +19,7 @@ function worker() {
     ['/assets/new-hash.js', new Response('new code')],
     ['/sounds/test.mp3', new Response('0123456789', { headers: { 'Content-Type': 'audio/mpeg' } })],
   ])));
-  stores.set('ver-o-tempo-shell-old', cache(new Map([
+  stores.set('squeeze-shell-old', cache(new Map([
     ['/index.html', new Response('shell v1')],
     ['/routines.json', new Response('defaults v1')],
     ['/assets/old-hash.js', new Response('old code')],
@@ -76,7 +76,7 @@ test('failed precache rejects installation and leaves earlier shell and unrelate
   let installation;
   env.listeners.install({ waitUntil: promise => { installation = promise; } });
   await expect(installation).rejects.toThrow('integrity mismatch');
-  expect(await (await env.stores.get('ver-o-tempo-shell-old').match('/index.html')).text()).toBe('shell v1');
+  expect(await (await env.stores.get('squeeze-shell-old').match('/index.html')).text()).toBe('shell v1');
   expect(env.caches.delete).not.toHaveBeenCalled();
   expect(env.self.skipWaiting).not.toHaveBeenCalled();
 });
@@ -96,7 +96,7 @@ test('online navigation keeps the active version even if origin already serves a
 
 test('live Vite navigation retires the production registration and serves development HTML', async () => {
   const env = worker();
-  env.fetch.mockResolvedValue(new Response('vite client', { headers: { 'X-Ver-O-Tempo-Dev': '1' } }));
+  env.fetch.mockResolvedValue(new Response('vite client', { headers: { 'X-Squeeze-Dev': '1' } }));
   expect(await (await env.request('/', { mode: 'navigate' })).text()).toBe('vite client');
   expect(env.self.registration.unregister).toHaveBeenCalledOnce();
   expect(env.request('/routines.json')).toBeUndefined();

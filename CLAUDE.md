@@ -45,7 +45,7 @@ PROGRESS e specifications distinguem o estado atual do histórico; CHANGES.MD é
 
 ## Implantação: Cloudflare Workers Static Assets (fase 3)
 
-A configuração `wrangler.jsonc` na raiz prepara o Worker `ver-o-tempo` na conta
+A configuração `wrangler.jsonc` na raiz prepara o Worker `squeeze` na conta
 `339987eb42deac962dcd86bffd351107`, com Wrangler fixado em 4.155.0.
 Usa somente assets de `./app/build` (caminho relativo à configuração), sem script Worker.
 `workers_dev=true` habilita workers.dev; não há routes, domínio personalizado nem alteração de DNS.
@@ -63,7 +63,7 @@ npx wrangler deploy --dry-run --config ../wrangler.jsonc
 # Publicação posterior, somente quando autorizada e autenticada na Cloudflare:
 npm run deploy
 # Rollback manual para uma versão previamente publicada:
-npx wrangler rollback <version-id> --name ver-o-tempo --config ../wrangler.jsonc
+npx wrangler rollback <version-id> --name squeeze --config ../wrangler.jsonc
 ```
 
 Os scripts usam explicitamente a configuração da raiz. O rollback é manual e não modifica DNS.

@@ -7,7 +7,7 @@ import { buildPwa } from './buildPwa.mjs';
 
 let root;
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'ver-o-tempo-pwa-'));
+  root = await mkdtemp(join(tmpdir(), 'squeeze-pwa-'));
   await mkdir(join(root, 'build/assets'), { recursive: true });
   await writeFile(join(root, 'build/index.html'), 'shell');
   await writeFile(join(root, 'build/assets/bundle-hash.js'), 'code');
