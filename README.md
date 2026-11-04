@@ -1,4 +1,6 @@
-# Ver o Tempo ⏰ — o tempo que dá pra ver
+# Squeeze — There's always room for one more thing
+
+> Derivado do Ver o Tempo. O endereço `https://squeeze.ggarrote.workers.dev/` é o destino previsto e só estará disponível após o primeiro deploy. Veja [deploy isolado e configuração do Cloudflare](docs/deploy.md).
 
 **Um app gratuito que mostra a rotina da manhã e da noite como uma fita colorida, para crianças que ainda não sabem ler as horas no relógio.**
 
@@ -127,9 +129,9 @@ As mudanças ficam guardadas **no próprio aparelho**, no navegador. Ao salvar (
 
 ### Configuração por URL
 
-Novos links usam **v2**, já implementada: [abrir uma rotina de noite](https://ver-o-tempo.ggarrote.workers.dev/?rotina=2.n.ba-20.ja-25.ma-de-5.1930) carrega banho (20 min), jantar (25 min), mãos + dentes (5 min) e final às 19:30. Consulte as [instruções oficiais completas](docs/url-rotina-v2.md), com todos os IDs atuais, limites, escapes, exemplos e um prompt autossuficiente para qualquer IA. Links gerados devem explicitar o horário final, salvo pedido pelos padrões.
+Novos links usam **v2**, já implementada: [abrir uma rotina de noite](https://squeeze.ggarrote.workers.dev/?rotina=2.n.ba-20.ja-25.ma-de-5.1930) carrega banho (20 min), jantar (25 min), mãos + dentes (5 min) e final às 19:30. Consulte as [instruções oficiais completas](docs/url-rotina-v2.md), com todos os IDs atuais, limites, escapes, exemplos e um prompt autossuficiente para qualquer IA. Links gerados devem explicitar o horário final, salvo pedido pelos padrões.
 
-O build gera a [página humana `/instrucoes`](https://ver-o-tempo.ggarrote.workers.dev/instrucoes) e o [Markdown `/instrucoes.md`](https://ver-o-tempo.ggarrote.workers.dev/instrucoes.md) da mesma fonte; a página contém o texto inteiro sem precisar executar JavaScript. Links v1 continuam aceitos; seu [guia de compatibilidade](docs/url-rotina.md) descreve somente o formato legado. Os atalhos `/0630`, `/0720` e `/1930` abrem tarefas padrão da manhã/noite com esse horário final.
+O build gera a [página humana `/instrucoes`](https://squeeze.ggarrote.workers.dev/instrucoes) e o [Markdown `/instrucoes.md`](https://squeeze.ggarrote.workers.dev/instrucoes.md) da mesma fonte; a página contém o texto inteiro sem precisar executar JavaScript. Links v1 continuam aceitos; seu [guia de compatibilidade](docs/url-rotina.md) descreve somente o formato legado. Os atalhos `/0630`, `/0720` e `/1930` abrem tarefas padrão da manhã/noite com esse horário final.
 
 ### Manter a tela ligada
 
@@ -141,7 +143,7 @@ um endereço HTTP da rede local pode não oferecer suporte. O navegador pode rec
 ou liberar o bloqueio, por exemplo para economizar bateria. Não mantém tela em segundo plano.
 
 A preferência fica só neste navegador/origem, na chave separada
-`ver-o-tempo:keep-screen-on`, sem entrar no link ou exportação da rotina. Se o storage
+`squeeze:keep-screen-on`, sem entrar no link ou exportação da rotina. Se o storage
 estiver bloqueado, vale só para a sessão e o menu avisa. O bloqueio é liberado ao
 desativar, ocultar/sair da página, abrir **Rotinas**, desmontar a tela ou marcar todas
 as tarefas explicitamente como feitas. A edição na própria tela mantém o bloqueio.
@@ -171,8 +173,8 @@ As rotinas ficam guardadas **por endereço**: o que você salvou em `localhost` 
 Para quem já tem [Git](https://git-scm.com/) e [Node.js](https://nodejs.org/) (26.13.0 LTS, conforme `.nvmrc`) instalados:
 
 ```bash
-git clone https://github.com/gutogarrote/ver-o-tempo.git
-cd ver-o-tempo/app
+git clone https://github.com/gutogarrote/squeeze.git
+cd squeeze/app
 npm ci
 npm start
 ```
@@ -190,7 +192,7 @@ O Node.js é um programa gratuito que faz o app funcionar.
 2. Baixe a versão **26.13.0 LTS** e instale como qualquer outro programa (pode ir clicando em "Avançar"/"Continuar").
 
 #### 2. Baixe o app
-1. Na [página do projeto no GitHub](https://github.com/gutogarrote/ver-o-tempo), clique no botão verde **`<> Code`** e depois em **Download ZIP**.
+1. Na [página do projeto no GitHub](https://github.com/gutogarrote/squeeze), clique no botão verde **`<> Code`** e depois em **Download ZIP**.
 2. Descompacte o arquivo baixado numa pasta fácil de achar, como **Documentos**.
 3. Dentro dela haverá uma pasta chamada **`app`**. É essa que importa.
 
@@ -247,7 +249,7 @@ O app não tem cadastro, login ou backend de rotinas. As configurações ficam n
 
 ## 🙏 De onde veio
 
-Este é o repositório do [ver-o-tempo](https://github.com/gutogarrote/ver-o-tempo), um app para visualizar o tempo em rotinas com crianças. A interface foi redesenhada para ficar mais clara, mais divertida e fácil de ler de longe.
+Este é o repositório do [Squeeze](https://github.com/gutogarrote/squeeze), derivado do Ver o Tempo. A base ainda mantém as rotinas infantis; as funções de time blocking para adultos serão implementadas separadamente.
 
 *Quer mexer no código?* Veja [`app/CHANGES.MD`](app/CHANGES.MD) e [`CLAUDE.md`](CLAUDE.md) para detalhes técnicos.
 
@@ -263,7 +265,7 @@ Este é o repositório do [ver-o-tempo](https://github.com/gutogarrote/ver-o-tem
 - It adapts to the screen: a horizontal ribbon on a TV, a vertical scrolling list on a phone.
 - Parents tap **✏️** to edit the routine on the main screen: ▲/▼ reorder, −1/+1 minute (every duration must be a whole number from 1 to 180; saving is disabled otherwise), **+** between tasks inserts one there, and −5/+5 move the routine's end time. It is a draft until **Salvar** (save); **Cancelar** discards it. Done marks stay with their tasks. The full editor and the deadline live behind the **☰** menu; there, **Excluir Rotina** (delete) on the morning or evening puts that period back to the app's original default after confirmation and **Salvar Alterações**, leaving the other period untouched. On phones only the task list scrolls: header, AGORA card and the footer (end time, +5, ✏️) stay on screen.
 - The end time is shown on the final milestone (phone) and above **+5 min** (TV); the normal **+5 min** still adds time for this run only.
-- **Two ways to run it.** (1) A published HTTPS build, when there is one: the project is prepared for Cloudflare Workers Static Assets, but this README lists no public address. A production HTTPS build needs no home computer, can be installed as an app (PWA) and works offline after one complete online visit plus a reload; the very first visit cannot be offline. See [docs/pwa.md](docs/pwa.md). (2) Locally: get [Node.js](https://nodejs.org/) (26.13.0 LTS, pinned in `.nvmrc`), then `git clone https://github.com/gutogarrote/ver-o-tempo.git`, `cd ver-o-tempo/app`, `npm ci`, `npm start` (or download the ZIP from GitHub). To use it on a TV or phone on the same Wi-Fi, open the "Network" address that `npm start` prints. The computer must stay on, and the dev server does not install the app or work offline.
+- **Two ways to run it.** (1) A published HTTPS build, when there is one: the project is prepared for Cloudflare Workers Static Assets, but this README lists no public address. A production HTTPS build needs no home computer, can be installed as an app (PWA) and works offline after one complete online visit plus a reload; the very first visit cannot be offline. See [docs/pwa.md](docs/pwa.md). (2) Locally: get [Node.js](https://nodejs.org/) (26.13.0 LTS, pinned in `.nvmrc`), then `git clone https://github.com/gutogarrote/squeeze.git`, `cd squeeze/app`, `npm ci`, `npm start` (or download the ZIP from GitHub). To use it on a TV or phone on the same Wi-Fi, open the "Network" address that `npm start` prints. The computer must stay on, and the dev server does not install the app or work offline.
 - Routines are stored per address (origin): data saved on `localhost` or the local network address does not move to a published address by itself; use a routine link to carry a routine.
 - **Not yet available:** sound alerts, different routines per weekday, and syncing between devices. Settings stay in each device's browser, with no accounts, login or routines backend. Fonts (Nunito, Fredoka, SIL OFL 1.1) are self-hosted with the app; no Google Fonts requests. Shared URLs can expose the names and schedules they contain.
 
@@ -303,7 +305,7 @@ Links compartilhados continuam transportando os nomes das tarefas na URL.
 
 ## Implantação: Cloudflare Workers Static Assets (fase 3)
 
-A configuração `wrangler.jsonc` na raiz prepara o Worker `ver-o-tempo` na conta
+A configuração `wrangler.jsonc` na raiz prepara o Worker `squeeze` na conta
 `339987eb42deac962dcd86bffd351107`, com Wrangler fixado em 4.155.0.
 Usa somente assets de `./app/build` (caminho relativo à configuração), sem script Worker.
 `workers_dev=true` habilita workers.dev; não há routes, domínio personalizado nem alteração de DNS.
@@ -321,7 +323,7 @@ npx wrangler deploy --dry-run --config ../wrangler.jsonc
 # Publicação posterior, somente quando autorizada e autenticada na Cloudflare:
 npm run deploy
 # Rollback manual para uma versão previamente publicada:
-npx wrangler rollback <version-id> --name ver-o-tempo --config ../wrangler.jsonc
+npx wrangler rollback <version-id> --name squeeze --config ../wrangler.jsonc
 ```
 
 Os scripts usam explicitamente a configuração da raiz. O rollback é manual e não modifica DNS.
