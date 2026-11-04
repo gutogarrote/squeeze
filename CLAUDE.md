@@ -3,7 +3,8 @@
 Squeeze é um app de planejamento reverso para adultos: o usuário define um deadline e uma
 sequência de tarefas, o app diz a que horas começar e, durante a execução, espreme as próximas
 tarefas enquanto a atual não é concluída. A especificação vigente é [specifications.md](specifications.md).
-AGENTS.md contém as convenções de contribuição.
+AGENTS.md contém as convenções de contribuição. [PROGRESS.md](PROGRESS.md) registra o andamento:
+atualize-o a cada etapa concluída (o que foi feito, como foi verificado, próximos passos).
 
 ## Estado atual
 

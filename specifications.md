@@ -90,11 +90,15 @@ sendo a atual até o usuário concluí-la ou adiá-la.
 | **Tarefa atual** | Conclui. A próxima vira a atual. | Adia: troca de lugar com a próxima, que vira a atual. |
 | **Tarefa atual, sendo a última pendente** | Conclui. | Não faz nada: o card desliza e volta. O tempo continua contando. |
 | **Tarefa concluída** | Não faz nada (desliza e volta). | **Reativa**: ela vira a atual e a atual anterior vira a próxima. |
+| **Próxima tarefa (não atual)** | Conclui antes da vez. A tarefa atual continua a atual. | Adia: troca de lugar com a seguinte. Se for a última pendente, desliza e volta. |
 | **Folga** | Marca a folga como feita: o tempo é distribuído (§6.3). | Não faz nada (desliza e volta). |
-| **Próximas tarefas** | Sem gesto no MVP; use o modo de edição. | Sem gesto no MVP. |
 
 Não há bolinhas nem caixas de seleção de conclusão: os swipes substituem esse mecanismo.
 Reativar é o "desfazer" de uma conclusão.
+
+Exemplo de conclusão antecipada: durante "Arrumar equipamento" ainda faltam "Guardar equipamento no
+carro", "Escrever orçamento" e "Almoçar". Quem come algo enquanto arruma faz swipe para a esquerda em
+"Almoçar": ela é concluída, o orçamento dela é distribuído e "Arrumar equipamento" segue como a atual.
 
 ## 6. Regras de tempo
 
@@ -133,8 +137,9 @@ Todas as mudanças se reduzem a duas operações:
 |---|---|
 | **Tarefa atual dentro do orçamento** | Só o restante dela diminui. As outras não mudam. |
 | **Tarefa atual estourando** | Cada segundo de excesso é **tirado** (folga primeiro, depois as pendentes). O excesso aparece em negativo (`-2 min`). |
-| **Concluir** | Se sobrou restante, ele é **dado** às pendentes (que crescem). O restante da tarefa concluída é guardado para uma eventual reativação. |
-| **Adiar** | A tarefa troca de lugar com a próxima e **conserva o restante** (orçamento e consumido não mudam). Se tinha estourado, volta com 0 min. |
+| **Concluir a atual** | Se sobrou restante, ele é **dado** às pendentes (que crescem). O restante da tarefa concluída é guardado para uma eventual reativação. |
+| **Concluir uma próxima tarefa** | Todo o restante dela é **dado** às outras pendentes, incluindo a atual. Fica guardado para uma eventual reativação. O tempo já consumido (se ela foi atual antes de um adiamento) continua registrado. |
+| **Adiar** | A tarefa troca de lugar com a seguinte e **conserva o restante** (orçamento e consumido não mudam). Se tinha estourado, volta com 0 min. Adiar uma próxima tarefa não muda nenhum tempo, só a ordem. |
 | **Reativar uma concluída** | Ela vira a atual com o restante que tinha ao ser concluída (0 se tinha estourado). Esse tempo é **tirado** (folga primeiro, depois as pendentes, incluindo a atual anterior, que agora é a próxima e fica pausada com o tempo que já gastou). |
 | **+5 min na tarefa atual** | O orçamento dela aumenta 5 min, **tirados** (folga primeiro, depois as seguintes). |
 | **Marcar a folga como feita** | A folga inteira é **dada** a todas as pendentes, incluindo a atual. A folga desaparece. |
@@ -236,7 +241,7 @@ Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
 Navegadores suspendem o app (e o som) quando o celular bloqueia. Por isso:
 
 - **Manter a tela acesa** (opção já existente, `useScreenWakeLock`), ativa durante a execução.
-- **Modo descanso:** após um período sem toques (padrão 1 min; opções 30 s, 1, 2, 5 min ou nunca),
+- **Modo descanso:** após um período sem toques (padrão 2 min; opções 2, 5 ou 10 min, ou nunca),
   a tela fica preta, com só a tarefa atual e o restante em cinza bem escuro, mudando de posição devagar
   para não marcar a tela. Um toque volta ao app; esse primeiro toque não aciona gestos. Um alerta sonoro
   também tira a tela do descanso.
@@ -338,4 +343,3 @@ manhã/noite e a sessão em memória.
 - **Aprendizado das estimativas:** histórico do tempo gasto por tarefa e sugestões de estimativas, sem
   alterar modelos automaticamente.
 - **Integrações** com TickTick, Todoist ou Trello para importar tarefas.
-- Gestos nas próximas tarefas (concluir ou adiar sem ser a atual).
