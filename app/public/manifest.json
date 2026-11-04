@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Ver o Tempo",
-  "short_name": "Ver o Tempo",
+  "name": "Squeeze",
+  "short_name": "Squeeze",
   "description": "Rotinas da manhã e da noite em uma fita colorida.",
   "lang": "pt-BR",
   "start_url": "/",

@@ -27,7 +27,7 @@ export function captureLinkContext(browser = window) {
 
 export function formatLinkDiagnostics(context, failure, browser = window) {
   return JSON.stringify({
-    diagnostic: 'ver-o-tempo/invalid-link/v1',
+    diagnostic: 'squeeze/invalid-link/v1',
     received: { href: context.href, search: context.search, pathname: context.pathname },
     parser: failure,
     atLoad: context.environment,

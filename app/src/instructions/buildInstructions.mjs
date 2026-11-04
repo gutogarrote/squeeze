@@ -81,7 +81,7 @@ export function buildInstructions() {
     });
   }
   return {
-    name: 'ver-o-tempo-instructions',
+    name: 'squeeze-instructions',
     configResolved(config) { output = resolve(config.root, config.build.outDir); },
     configureServer: middleware,
     configurePreviewServer: middleware,

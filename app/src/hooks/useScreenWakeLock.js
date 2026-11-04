@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const WAKE_LOCK_KEY = 'ver-o-tempo:keep-screen-on';
+export const WAKE_LOCK_KEY = 'squeeze:keep-screen-on';
 const readPreference = () => {
   try { return localStorage.getItem(WAKE_LOCK_KEY) === 'true'; } catch (_) { return false; }
 };

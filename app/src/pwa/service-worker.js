@@ -1,5 +1,5 @@
 // Build substitutes these values; this source is never served in development.
-const CACHE_PREFIX = 'ver-o-tempo-shell-';
+const CACHE_PREFIX = 'squeeze-shell-';
 const CACHE_NAME = CACHE_PREFIX + '__BUILD_VERSION__';
 const PRECACHE = /* __PRECACHE__ */ [];
 const ASSET_PATHS = new Set(PRECACHE.map(asset => asset.url));
@@ -30,7 +30,7 @@ async function shell(request) {
   const timeout = setTimeout(() => controller.abort(), 1500);
   try {
     const response = await fetch(request, { signal: controller.signal });
-    if (response.headers.get('X-Ver-O-Tempo-Dev') === '1') {
+    if (response.headers.get('X-Squeeze-Dev') === '1') {
       development = true;
       await self.registration.unregister();
       return response;

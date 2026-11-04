@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 export function buildPwa() {
   let output;
   return {
-    name: 'ver-o-tempo-pwa',
+    name: 'squeeze-pwa',
     apply: 'build',
     configResolved(config) { output = resolve(config.root, config.build.outDir); },
     async closeBundle() {
@@ -37,11 +37,11 @@ export function buildPwa() {
 // A controlled preview origin can be reused for Vite development.
 export function developmentHeader() {
   return {
-    name: 'ver-o-tempo-development',
+    name: 'squeeze-development',
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
-        response.setHeader('X-Ver-O-Tempo-Dev', '1');
+        response.setHeader('X-Squeeze-Dev', '1');
         next();
       });
     },
