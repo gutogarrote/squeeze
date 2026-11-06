@@ -41,6 +41,8 @@ O usuário pode:
 - Criar, editar, remover e reordenar tarefas (nome e estimativa em minutos).
 - Importar um plano completo por link (§14).
 
+O campo de deadline fica ao final da lista de tarefas, também na edição durante a execução.
+
 ### Horário ideal de início
 
 `início ideal = deadline − soma das estimativas`.
@@ -179,8 +181,9 @@ disponível depois que ela estoura. Cada toque segue a regra de §6.3.
 
 ### 7.2 Modo de edição
 
-Disponível antes e durante a execução. Permite renomear, mudar a estimativa, incluir, remover
-e reordenar tarefas pendentes, e mudar o deadline. Tarefas concluídas não são editadas (reative primeiro).
+Disponível antes e durante a execução. Permite mudar o nome da rotina, renomear tarefas,
+mudar a estimativa, incluir, remover e reordenar tarefas pendentes, e mudar o deadline.
+Tarefas concluídas não são editadas (reative primeiro).
 
 Ao salvar uma edição durante a execução:
 
@@ -218,9 +221,9 @@ Três toques, baseados no **restante da tarefa atual**:
 
 | Momento | Toque |
 |---|---|
-| Restante chega a **5 min** | Suave. |
-| Restante chega a **1 min** | Aviso. |
-| Restante chega a **0** (tempo esgotado) | Intenso e perceptível. |
+| Restante chega a **5 min** | Dois toques firmes. |
+| Restante chega a **1 min** | Três toques mais fortes. |
+| Restante chega a **0** (tempo esgotado) | Seis toques alternados, mais intensos e prolongados. |
 
 Regras:
 
@@ -231,6 +234,7 @@ Regras:
   estourada toca o toque intenso assim que volta a ser a atual.
 - Um +5 min que leva o restante de volta para cima de um limite rearma aquele toque.
 - O usuário liga e desliga os sons. Os alertas nunca mudam o estado das tarefas.
+- Os tons sustentam o volume antes de desaparecer; volume, duração e repetição crescem com a urgência.
 - Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
 
 Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
@@ -272,6 +276,10 @@ Não há rotinas fixas de manhã e noite. O usuário pode:
 
 - Criar uma rotina nova e salvá-la com nome.
 - Abrir, modificar e salvar de novo uma rotina salva.
+- **Salvar como…**: escolher um nome para uma nova cópia, preservando a rotina original.
+- **Renomear** na lista de rotinas salvas: mudar só o nome, sem alterar tarefas ou deadline
+  nem gravar edições pendentes no planejamento. O rascunho aberto acompanha o novo nome
+  quando corresponde à rotina renomeada.
 - Reiniciar uma rotina com as mesmas tarefas e estimativas, informando só um novo deadline.
 
 Rotinas salvas são **modelos**: ajustes feitos durante a execução não alteram o modelo, a não ser que

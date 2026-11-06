@@ -14,9 +14,10 @@ sem rede. A primeira visita offline não funciona. O site também funciona sem i
 
 O manifest tem `id`, `start_url` e `scope` `/`, nome Squeeze, tema/fundo escuro
 `#09090b`, ícones 192/512 e versões maskable com o desenho dentro do círculo seguro
-central (raio inferior a 40% da largura). Os ícones ainda são os herdados do Ver o Tempo
-(`icons/*.svg` são as fontes vetoriais) e devem ganhar uma versão própria do Squeeze.
-O ícone Apple tem 180 px. Nenhum prompt de instalação customizado foi adicionado.
+central (raio inferior a 40% da largura). A identidade do Squeeze usa um S geométrico
+verde-lima sobre fundo escuro; `icons/*.svg` são as fontes vetoriais dos PNGs.
+O ícone Apple tem 180 px; o favicon ICO tem versões de 16, 32 e 48 px, com SVG para
+navegadores compatíveis. Nenhum prompt de instalação customizado foi adicionado.
 
 As opções de instalação seguem o [suporte de cada navegador](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing).
 A validação local usa Chromium instalado via Playwright, com telas TV/celular simuladas;

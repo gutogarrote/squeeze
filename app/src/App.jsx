@@ -108,14 +108,22 @@ export default function App({ clock = Date.now }) {
     setRun(startRun({ name: draft.name.trim() || 'Rotina', templateId: draft.templateId, deadlineMs: nextOccurrence(draft.deadline, clock()), tasks }, clock()));
   }
 
-  function saveTemplate(asNew = false) {
-    const plan = { ...draft, tasks: cleanItems(draft.tasks) };
+  function saveTemplate(asNew = false, name = draft.name) {
+    const plan = { ...draft, name, tasks: cleanItems(draft.tasks) };
     const exists = !asNew && templates.some((t) => t.id === draft.templateId);
     const { id, list } = upsertTemplate(templates, { ...plan, id: exists ? draft.templateId : undefined, templateId: exists ? draft.templateId : null });
     setTemplates(list);
     saveTemplates(list);
     setDraft({ ...plan, name: plan.name.trim() || 'Sem nome', templateId: id });
     setToast(exists ? 'Rotina salva.' : 'Nova rotina salva.');
+  }
+
+  function renameTemplate(id, name) {
+    const list = templates.map((t) => (t.id === id ? { ...t, name } : t));
+    setTemplates(list);
+    saveTemplates(list);
+    if (draft.templateId === id) setDraft({ ...draft, name });
+    setToast('Rotina renomeada.');
   }
 
   function deleteTemplate(id) {
@@ -195,9 +203,10 @@ export default function App({ clock = Date.now }) {
           templates={templates}
           onStart={start}
           onSave={() => saveTemplate(false)}
-          onSaveAsNew={() => saveTemplate(true)}
+          onSaveAsNew={(name) => saveTemplate(true, name)}
           onOpenTemplate={(t) => setDraft(planFrom(t, t.id))}
           onDeleteTemplate={deleteTemplate}
+          onRenameTemplate={renameTemplate}
           onNew={() => setDraft({ name: '', deadline: draft.deadline, templateId: null, tasks: [] })}
           onShare={share}
           onSettings={() => setSheet('settings')}

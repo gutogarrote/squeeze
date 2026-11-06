@@ -199,20 +199,6 @@ export default function RunScreen({
           <Button variant="ghost" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
           <Button variant="ghost" onClick={onEnd}>Encerrar</Button>
         </div>
-        <div className={`mt-2 flex items-center justify-between rounded-2xl px-4 py-3 ring-1 ${view.late ? 'bg-rose-600/90 ring-rose-400' : 'bg-zinc-900 ring-white/5'}`}>
-          <div>
-            <p className={`text-xs uppercase tracking-widest ${view.late ? 'text-rose-100' : 'text-zinc-500'}`}>
-              {view.late ? 'O tempo acabou' : `Deadline ${formatClock(view.deadlineMs)}`}
-            </p>
-            <p className="text-2xl font-semibold tabular-nums text-zinc-50" data-testid="until-deadline">
-              {formatCountdown(view.untilDeadlineMs)}
-            </p>
-          </div>
-          <button type="button" onClick={onExtendDeadline} aria-label="Mais 5 minutos no deadline"
-            className="rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-zinc-50 ring-1 ring-white/15 hover:bg-white/20">
-            +5 deadline
-          </button>
-        </div>
         {view.deficitMs > 0 && !view.late && (
           <p role="status" className="mt-2 rounded-xl bg-amber-400/10 px-4 py-2 text-sm text-amber-200 ring-1 ring-amber-400/30">
             Faltam {formatMinutes(view.deficitMs)} para caber tudo: as próximas tarefas estão comprimidas.
@@ -252,9 +238,22 @@ export default function RunScreen({
         )}
       </ol>
 
-      <p className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-sm text-zinc-500">
-        <span>Deadline</span><span className="tabular-nums">{formatClock(view.deadlineMs)}</span>
-      </p>
+      <section aria-label="Deadline da rotina"
+        className={`mt-4 flex items-center justify-between gap-3 rounded-2xl px-4 py-4 ring-1 ${view.late ? 'bg-rose-600/90 ring-rose-400' : 'bg-zinc-900 ring-white/10'}`}>
+        <div>
+          <p className={`text-xs uppercase tracking-widest ${view.late ? 'text-rose-100' : 'text-zinc-400'}`}>
+            Deadline {formatClock(view.deadlineMs)}
+          </p>
+          {view.late && <p className="mt-1 text-sm font-medium text-rose-100">O tempo acabou</p>}
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-50" data-testid="until-deadline">
+            {formatCountdown(view.untilDeadlineMs)}
+          </p>
+        </div>
+        <button type="button" onClick={onExtendDeadline} aria-label="Mais 5 minutos no deadline"
+          className="shrink-0 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-zinc-50 ring-1 ring-white/15 hover:bg-white/20">
+          +5 deadline
+        </button>
+      </section>
       {!view.allDone && (
         <p className="mt-6 text-center text-xs text-zinc-600">Deslize ← para concluir, → para adiar. Toque num card para ver as ações.</p>
       )}
