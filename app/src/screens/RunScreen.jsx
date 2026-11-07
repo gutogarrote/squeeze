@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SwipeCard from '../components/SwipeCard';
 import { Button } from '../components/Sheet';
+import TimelineCard from '../components/TimelineCard';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
 
 const MIN_MS = 60000;
@@ -192,13 +193,8 @@ export default function RunScreen({
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-24 pt-4">
-      <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-1 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <p className="mr-auto min-w-0 truncate text-sm font-medium text-zinc-400">{view.name}</p>
-          <Button variant="ghost" onClick={onEdit}>Editar</Button>
-          <Button variant="ghost" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
-          <Button variant="ghost" onClick={onEnd}>Encerrar</Button>
-        </div>
+      <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur">
+        <TimelineCard startMs={view.startedAtMs} deadlineMs={view.deadlineMs} now={now} late={view.late} squeezed={view.deficitMs > 0} />
         {view.deficitMs > 0 && !view.late && (
           <p role="status" className="mt-2 rounded-xl bg-amber-400/10 px-4 py-2 text-sm text-amber-200 ring-1 ring-amber-400/30">
             Faltam {formatMinutes(view.deficitMs)} para caber tudo: as próximas tarefas estão comprimidas.
@@ -254,6 +250,12 @@ export default function RunScreen({
           +5 deadline
         </button>
       </section>
+      <nav aria-label="Ações da rotina" className="mt-4 flex items-center justify-end gap-1">
+        <p className="mr-auto min-w-0 truncate text-sm text-zinc-500">{view.name}</p>
+        <Button variant="secondary" onClick={onEdit}>Editar</Button>
+        <Button variant="secondary" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
+        <Button variant="secondary" onClick={onEnd}>Encerrar</Button>
+      </nav>
       {!view.allDone && (
         <p className="mt-6 text-center text-xs text-zinc-600">Deslize ← para concluir, → para adiar. Toque num card para ver as ações.</p>
       )}

@@ -291,6 +291,39 @@ describe('running', () => {
   });
 });
 
+describe('timeline card and actions', () => {
+  test('the top card shows start, now and deadline, and the time left follows the clock', () => {
+    startExample();
+    const card = screen.getByRole('region', { name: 'Linha do tempo da rotina' });
+    expect(within(card).getByLabelText('Início 12:20')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Agora 12:20')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Deadline 15:00')).toBeInTheDocument();
+    expect(screen.getByTestId('time-left')).toHaveTextContent('2:40:00 restantes');
+    expect(within(card).getByRole('progressbar')).toHaveValue(100);
+    advance(80 * MIN);
+    expect(within(card).getByLabelText('Agora 13:40')).toBeInTheDocument();
+    expect(screen.getByTestId('time-left')).toHaveTextContent('1:20:00 restantes');
+    expect(within(card).getByRole('progressbar')).toHaveValue(50);
+  });
+
+  test('after the deadline the top card shows the delay', () => {
+    startExample();
+    advance(170 * MIN);
+    expect(screen.getByTestId('time-left')).toHaveTextContent('-10:00 atrasado');
+    expect(within(screen.getByRole('region', { name: 'Linha do tempo da rotina' })).getByRole('progressbar')).toHaveValue(0);
+  });
+
+  test('edit, settings and end come after the deadline card, at the end of the routine', () => {
+    startExample();
+    const deadline = screen.getByRole('region', { name: 'Deadline da rotina' });
+    const actions = screen.getByRole('navigation', { name: 'Ações da rotina' });
+    expect(deadline.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(actions).getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Ajustes' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Encerrar' })).toBeInTheDocument();
+  });
+});
+
 describe('edit mode and ending', () => {
   test('editing the run name persists it and updates the template only when requested at the end', () => {
     render(<App clock={clock} />);

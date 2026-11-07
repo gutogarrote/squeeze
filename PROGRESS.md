@@ -9,7 +9,8 @@ O histórico da Rotina da Nina fica no repositório do Ver o Tempo.
 O MVP da especificação está implementado em `app/` e substituiu o código do Ver o Tempo.
 Inclui identidade visual própria, deadline ao fim da rotina, salvar como e renomear, e alertas
 mais intensos. Verificado com lint sem avisos, 182 testes em 15 arquivos e build de produção;
-telas conferidas no Chromium em larguras de 320 e 390 px. Nenhum deploy executado.
+telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.ggarrote.workers.dev
+(deploy manual feito pelo Guto após o PR 4).
 
 ## Etapas
 
@@ -27,6 +28,14 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Nenhum deploy executad
 - Os toques são sintetizados (Web Audio); podem ser trocados por sons próprios.
 
 ## Registro
+
+### 2026-11-07 — Linha do tempo no topo e ações no fim
+
+- Card fixo no topo da execução: início à esquerda, agora no meio, deadline à direita; linha colorida
+  que encolhe para a direita com o tempo restante (ou atraso) acompanhando o ponto do agora.
+- Editar, Ajustes e Encerrar saíram do topo e foram para depois do card do deadline, à direita.
+- Modo descanso: o texto não passa mais da borda da tela.
+- Verificação: lint sem avisos, testes e build; telas conferidas no Chromium com viewport de iPhone 13.
 
 ### 2026-11-06 — Identidade e controles das rotinas
 

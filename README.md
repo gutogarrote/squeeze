@@ -43,7 +43,9 @@ Tocar num card mostra os mesmos comandos como botões.
 - Se você conclui antes, a sobra é dividida entre as próximas, que crescem.
 - **+5 min** aparece quando faltam 5 minutos para a tarefa atual; **+5 deadline** está sempre à mão.
 - **Editar** permite mudar durações, incluir, remover e reordenar tarefas durante a rotina.
-- O deadline, o contador e **+5 deadline** ficam ao final das tarefas e da folga. Depois
+- Uma linha do tempo fixa no topo mostra início, agora e deadline, com o tempo restante.
+- O deadline, o contador e **+5 deadline** ficam ao final das tarefas e da folga, seguidos de
+  **Editar**, **Ajustes** e **Encerrar**. Depois
   do deadline, esse card fica vermelho e mostra o atraso em tempo real. Tudo continua funcionando.
 
 **Alertas e tela.** Toques mais fortes e repetidos aos 5 minutos, a 1 minuto e quando o

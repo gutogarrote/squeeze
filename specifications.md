@@ -76,11 +76,16 @@ A rotina **só começa quando o usuário toca em "Começar"**. O relógio da exe
 
 A tela mostra, de cima para baixo:
 
-1. Tarefas concluídas, no lugar em que estavam, visualmente esmaecidas.
-2. **Tarefa atual** em destaque: nome, restante (ou excesso), consumido e estimativa.
-3. Próximas tarefas, com o orçamento ajustado.
-4. Card de **folga**, quando houver.
-5. Deadline e tempo até ele (ou atraso).
+1. **Linha do tempo**, fixa no topo o tempo todo: horário de início da rotina à esquerda, horário
+   atual no meio e deadline à direita. Embaixo, uma linha colorida começa cheia e encolhe da esquerda
+   para a direita conforme o tempo passa; o tempo restante (ou o atraso) acompanha o ponto do agora.
+   Verde normalmente, âmbar quando faltar tempo para caber tudo, vermelha depois do deadline.
+2. Tarefas concluídas, no lugar em que estavam, visualmente esmaecidas.
+3. **Tarefa atual** em destaque: nome, restante (ou excesso), consumido e estimativa.
+4. Próximas tarefas, com o orçamento ajustado.
+5. Card de **folga**, quando houver.
+6. Card do **deadline**, com horário, contador e +5 deadline.
+7. Botões **Editar**, **Ajustes** e **Encerrar**, alinhados à direita, ao alcance do polegar.
 
 **Nenhuma tarefa termina automaticamente.** Mesmo com o restante esgotado, a tarefa continua
 sendo a atual até o usuário concluí-la ou adiá-la.
