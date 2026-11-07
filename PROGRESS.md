@@ -35,6 +35,9 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   que encolhe para a direita com o tempo restante (ou atraso) acompanhando o ponto do agora.
 - Editar, Ajustes e Encerrar saíram do topo e foram para depois do card do deadline, à direita.
 - Modo descanso: o texto não passa mais da borda da tela.
+- Ícone trocado: o S deu lugar a cards espremidos de tamanhos diferentes (feita, atual, próxima,
+  última) acima da linha do deadline. PNGs 192/512, maskable, Apple 180 e favicon 16/32/48 gerados
+  a partir dos SVGs.
 - Verificação: lint sem avisos, testes e build; telas conferidas no Chromium com viewport de iPhone 13.
 
 ### 2026-11-06 — Identidade e controles das rotinas

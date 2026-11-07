@@ -1,5 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#09090b"/>
-  <path fill="#bef264"
-    d="M170 130H402L348 190H154L186 224H348L402 281V316L343 379H109L167 317H363L331 281H167L110 223V191Z"/>
+  <g transform="translate(256 256) scale(0.78) translate(-256 -258)">
+    <rect x="166" y="86" width="180" height="52" rx="16" fill="#bef264" opacity=".35"/>
+    <rect x="96" y="154" width="320" height="140" rx="30" fill="#bef264"/>
+    <rect x="136" y="310" width="240" height="56" rx="18" fill="#bef264" opacity=".7"/>
+    <rect x="191" y="382" width="130" height="18" rx="9" fill="#bef264" opacity=".5"/>
+    <rect x="96" y="420" width="320" height="10" rx="5" fill="#fafafa"/>
+  </g>
 </svg>

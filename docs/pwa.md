@@ -14,8 +14,9 @@ sem rede. A primeira visita offline não funciona. O site também funciona sem i
 
 O manifest tem `id`, `start_url` e `scope` `/`, nome Squeeze, tema/fundo escuro
 `#09090b`, ícones 192/512 e versões maskable com o desenho dentro do círculo seguro
-central (raio inferior a 40% da largura). A identidade do Squeeze usa um S geométrico
-verde-lima sobre fundo escuro; `icons/*.svg` são as fontes vetoriais dos PNGs.
+central (raio inferior a 40% da largura). O ícone do Squeeze mostra cards verde-lima empilhados sobre fundo escuro, de tamanhos diferentes,
+acima de uma linha branca (o deadline): um card pequeno e apagado (tarefa feita), o maior (a atual),
+um menor (a próxima) e um bem fino (a última, espremida). `icons/*.svg` são as fontes vetoriais dos PNGs.
 O ícone Apple tem 180 px; o favicon ICO tem versões de 16, 32 e 48 px, com SVG para
 navegadores compatíveis. Nenhum prompt de instalação customizado foi adicionado.
 
