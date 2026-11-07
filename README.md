@@ -15,8 +15,8 @@ independente, com build e deploy próprios. A especificação completa está em
 
 ## Como funciona
 
-**Planejar.** Dê um nome à rotina, escolha o deadline e liste as tarefas com a duração
-estimada. O app mostra em destaque o horário ideal de início (deadline menos a soma das
+**Planejar.** Dê um nome à rotina, liste as tarefas com a duração estimada e escolha o
+deadline ao final da lista. O app mostra em destaque o horário ideal de início (deadline menos a soma das
 estimativas). Se esse horário já passou, mostra o atraso e quanto as tarefas serão comprimidas.
 O deadline vale a próxima ocorrência do horário: às 23h, escolher 01:00 significa amanhã.
 
@@ -43,13 +43,20 @@ Tocar num card mostra os mesmos comandos como botões.
 - Se você conclui antes, a sobra é dividida entre as próximas, que crescem.
 - **+5 min** aparece quando faltam 5 minutos para a tarefa atual; **+5 deadline** está sempre à mão.
 - **Editar** permite mudar durações, incluir, remover e reordenar tarefas durante a rotina.
-- Depois do deadline, um aviso vermelho mostra o atraso em tempo real. Tudo continua funcionando.
+- Uma linha do tempo fixa no topo mostra início, agora e deadline, com o tempo restante.
+- O deadline, o contador e **+5 deadline** ficam ao final das tarefas e da folga, seguidos de
+  **Editar**, **Ajustes** e **Encerrar**. Depois
+  do deadline, esse card fica vermelho e mostra o atraso em tempo real. Tudo continua funcionando.
 
-**Alertas e tela.** Toques aos 5 minutos, a 1 minuto e quando o tempo da tarefa acaba.
+**Alertas e tela.** Toques mais fortes e repetidos aos 5 minutos, a 1 minuto e quando o
+tempo da tarefa acaba, com intensidade crescente.
 Em **Ajustes** dá para desligar os sons, manter a tela acesa e escolher o modo descanso
 (tela preta depois de 2, 5 ou 10 minutos sem toques; um toque volta).
 
-**Rotinas salvas.** Salve uma rotina com nome para reutilizar. Ajustes feitos durante a
+**Rotinas salvas.** Salve uma rotina com nome para reutilizar. **Salvar como…** pede um
+nome e cria uma cópia, preservando a original. Em **Rotinas → Renomear**, mude o nome de
+uma rotina salva sem gravar outras alterações pendentes. O nome também pode ser editado
+durante a execução. Ajustes feitos durante a
 execução não mudam a rotina salva, a não ser que você escolha atualizá-la ao encerrar.
 Também dá para recomeçar as mesmas tarefas com um novo deadline.
 

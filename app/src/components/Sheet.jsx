@@ -9,7 +9,7 @@ export default function Sheet({ title, onClose, children, footer, wide = false }
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
       <div aria-hidden="true" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <section role="dialog" aria-modal="true" aria-label={title}
         className={`relative flex max-h-[92vh] w-full flex-col rounded-t-3xl bg-zinc-950 ring-1 ring-white/10 sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}>

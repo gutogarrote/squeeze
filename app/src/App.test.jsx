@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import App from './App';
 import { KEYS } from './lib/storage';
@@ -84,9 +85,112 @@ describe('planning', () => {
     expect(screen.getByDisplayValue('Orçamento')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeInTheDocument();
   });
+
+  test('the editable deadline follows all tasks in the planner', () => {
+    render(<App clock={clock} />);
+    expect(screen.getByRole('button', { name: '+ Adicionar tarefa' }).compareDocumentPosition(screen.getByLabelText('Deadline')))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  test('save as asks for a name and preserves the original routine', () => {
+    const { unmount } = render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    const [original] = JSON.parse(localStorage.getItem(KEYS.templates));
+    fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Novo orçamento' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar como…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Salvar como' });
+    const name = within(dialog).getByRole('textbox', { name: 'Nome da rotina' });
+    expect(name).toHaveFocus();
+    fireEvent.change(name, { target: { value: '  Tarde de sexta  ' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar nova rotina' }));
+    const templates = JSON.parse(localStorage.getItem(KEYS.templates));
+    expect(templates).toHaveLength(2);
+    expect(templates[0]).toEqual(original);
+    expect(templates[1].id).not.toBe(original.id);
+    expect(templates[1].name).toBe('Tarde de sexta');
+    expect(templates[1].tasks[0].name).toBe('Novo orçamento');
+    expect(JSON.parse(localStorage.getItem(KEYS.draft)).templateId).toBe(templates[1].id);
+    unmount();
+    render(<App clock={clock} />);
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Tarde de sexta');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    expect(screen.getByRole('button', { name: 'Abrir Tarde' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir Tarde de sexta' })).toBeInTheDocument();
+  });
+
+  test('save as rejects a blank name and cancel leaves the routines unchanged', async () => {
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    const original = localStorage.getItem(KEYS.templates);
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar como…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Salvar como' });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nome da rotina' }), { target: { value: '   ' } });
+    expect(within(dialog).getByRole('button', { name: 'Salvar nova rotina' })).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(localStorage.getItem(KEYS.templates)).toBe(original);
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Tarde');
+    expect(screen.getByRole('button', { name: 'Salvar como…' })).toHaveFocus();
+  });
+
+  test('renaming a saved routine preserves its identity and does not save pending task edits', () => {
+    const { unmount } = render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    const [original] = JSON.parse(localStorage.getItem(KEYS.templates));
+    fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Rascunho pendente' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear Tarde' }));
+    const dialog = screen.getByRole('dialog', { name: 'Renomear rotina' });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nome da rotina' }), { target: { value: '  Trabalho  ' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Renomear' }));
+    expect(screen.getByRole('button', { name: 'Abrir Trabalho' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([{ ...original, name: 'Trabalho' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Trabalho');
+    expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Rascunho pendente');
+    unmount();
+    render(<App clock={clock} />);
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Trabalho');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Trabalho' }));
+    expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Orçamento');
+  });
+
+  test('renaming another saved routine and cancelling a rename leave the open draft alone', () => {
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nova rotina' }));
+    fireEvent.change(screen.getByLabelText('Nome da rotina'), { target: { value: 'Outro rascunho' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear Tarde' }));
+    let dialog = screen.getByRole('dialog', { name: 'Renomear rotina' });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nome da rotina' }), { target: { value: 'Descartado' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.getByRole('button', { name: 'Renomear Tarde' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Renomear Tarde' }));
+    dialog = screen.getByRole('dialog', { name: 'Renomear rotina' });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nome da rotina' }), { target: { value: 'Trabalho' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Renomear' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Outro rascunho');
+    expect(screen.queryByLabelText('Nome da tarefa 1')).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Trabalho');
+  });
 });
 
 describe('running', () => {
+  test('the countdown and deadline controls follow tasks and the buffer', () => {
+    startExample();
+    const deadline = screen.getByRole('region', { name: 'Deadline da rotina' });
+    expect(card('Folga').compareDocumentPosition(deadline)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(within(deadline).getByText('Deadline 15:00')).toBeInTheDocument();
+    expect(within(deadline).getByTestId('until-deadline')).toHaveTextContent('2:40:00');
+    fireEvent.click(within(deadline).getByRole('button', { name: 'Mais 5 minutos no deadline' }));
+    expect(within(deadline).getByText('Deadline 15:05')).toBeInTheDocument();
+    expect(within(deadline).getByTestId('until-deadline')).toHaveTextContent('2:45:00');
+  });
+
   test('starting early creates a buffer and shows the current task', () => {
     startExample();
     expect(card('Tarefa atual: Orçamento')).toHaveTextContent('1:00:00');
@@ -187,7 +291,61 @@ describe('running', () => {
   });
 });
 
+describe('timeline card and actions', () => {
+  test('the top card shows start, now and deadline, and the time left follows the clock', () => {
+    startExample();
+    const card = screen.getByRole('region', { name: 'Linha do tempo da rotina' });
+    expect(within(card).getByLabelText('Início 12:20')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Agora 12:20')).toBeInTheDocument();
+    expect(within(card).getByLabelText('Deadline 15:00')).toBeInTheDocument();
+    expect(screen.getByTestId('time-left')).toHaveTextContent('2:40:00 restantes');
+    expect(within(card).getByRole('progressbar')).toHaveValue(100);
+    advance(80 * MIN);
+    expect(within(card).getByLabelText('Agora 13:40')).toBeInTheDocument();
+    expect(screen.getByTestId('time-left')).toHaveTextContent('1:20:00 restantes');
+    expect(within(card).getByRole('progressbar')).toHaveValue(50);
+  });
+
+  test('after the deadline the top card shows the delay', () => {
+    startExample();
+    advance(170 * MIN);
+    expect(screen.getByTestId('time-left')).toHaveTextContent('-10:00 atrasado');
+    expect(within(screen.getByRole('region', { name: 'Linha do tempo da rotina' })).getByRole('progressbar')).toHaveValue(0);
+  });
+
+  test('edit, settings and end come after the deadline card, at the end of the routine', () => {
+    startExample();
+    const deadline = screen.getByRole('region', { name: 'Deadline da rotina' });
+    const actions = screen.getByRole('navigation', { name: 'Ações da rotina' });
+    expect(deadline.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(actions).getByRole('button', { name: 'Editar' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Ajustes' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Encerrar' })).toBeInTheDocument();
+  });
+});
+
 describe('edit mode and ending', () => {
+  test('editing the run name persists it and updates the template only when requested at the end', () => {
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    advance(MIN);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar rotina' });
+    expect(within(dialog).getByRole('button', { name: '+ Adicionar tarefa' }).compareDocumentPosition(within(dialog).getByLabelText('Deadline')))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    fireEvent.change(within(dialog).getByLabelText('Nome da rotina'), { target: { value: 'Tarde de trabalho' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    expect(screen.getByText('Tarde de trabalho')).toBeInTheDocument();
+    expect(card('Tarefa atual: Orçamento')).toHaveTextContent('59:00');
+    expect(JSON.parse(localStorage.getItem(KEYS.run)).name).toBe('Tarde de trabalho');
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Tarde');
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar e atualizar a rotina salva' }));
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Tarde de trabalho');
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Tarde de trabalho');
+  });
+
   test('editing during the run changes estimates and adds tasks', () => {
     startExample();
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));

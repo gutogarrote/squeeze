@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import TaskListEditor from '../components/TaskListEditor';
 import Sheet, { Button } from '../components/Sheet';
+import DeadlineField from '../components/DeadlineField';
+import RoutineNameSheet from '../components/RoutineNameSheet';
 import { formatClock, formatMinutes, nextOccurrence } from '../lib/clock';
 import { planSummary, totalMinutes } from '../lib/engine';
 
@@ -29,30 +31,38 @@ function Hero({ draft, now }) {
   );
 }
 
-function RoutinesSheet({ templates, currentId, onOpen, onDelete, onNew, onClose }) {
+function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onNew, onClose }) {
   const [confirming, setConfirming] = useState(null);
+  const [renaming, setRenaming] = useState(null);
+  if (renaming) {
+    return <RoutineNameSheet initialName={renaming.name} mode="rename" onCancel={() => setRenaming(null)}
+      onSave={(name) => { onRename(renaming.id, name); setRenaming(null); }} />;
+  }
   return (
     <Sheet title="Rotinas salvas" onClose={onClose}
       footer={<Button variant="secondary" className="w-full" onClick={onNew}>Nova rotina</Button>}>
       {!templates.length && <p className="py-4 text-zinc-400">Nenhuma rotina salva ainda. Use “Salvar” no planejamento.</p>}
       <ul className="space-y-2">
         {templates.map((t) => (
-          <li key={t.id} className={`flex items-center gap-2 rounded-xl p-3 ring-1 ${t.id === currentId ? 'bg-lime-300/10 ring-lime-300/30' : 'bg-zinc-900 ring-white/5'}`}>
-            <div className="min-w-0 flex-1">
+          <li key={t.id} className={`rounded-xl p-3 ring-1 ${t.id === currentId ? 'bg-lime-300/10 ring-lime-300/30' : 'bg-zinc-900 ring-white/5'}`}>
+            <div className="min-w-0">
               <p className="truncate font-medium text-zinc-100">{t.name}</p>
               <p className="text-sm text-zinc-500">{t.tasks.length} tarefas · {formatMinutes(totalMinutes(t.tasks) * 60000)} · até {t.deadline}</p>
             </div>
-            {confirming === t.id ? (
-              <>
-                <Button variant="danger" onClick={() => { onDelete(t.id); setConfirming(null); }}>Excluir</Button>
-                <Button variant="ghost" onClick={() => setConfirming(null)}>Não</Button>
-              </>
-            ) : (
-              <>
-                <Button variant="secondary" aria-label={`Abrir ${t.name}`} onClick={() => onOpen(t)}>Abrir</Button>
-                <Button variant="ghost" aria-label={`Excluir ${t.name}`} onClick={() => setConfirming(t.id)}>×</Button>
-              </>
-            )}
+            <div className="mt-2 flex flex-wrap gap-1">
+              {confirming === t.id ? (
+                <>
+                  <Button variant="danger" onClick={() => { onDelete(t.id); setConfirming(null); }}>Excluir</Button>
+                  <Button variant="ghost" onClick={() => setConfirming(null)}>Não</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="secondary" aria-label={`Abrir ${t.name}`} onClick={() => onOpen(t)}>Abrir</Button>
+                  <Button variant="ghost" aria-label={`Renomear ${t.name}`} onClick={() => setRenaming(t)}>Renomear</Button>
+                  <Button variant="ghost" aria-label={`Excluir ${t.name}`} onClick={() => setConfirming(t.id)}>×</Button>
+                </>
+              )}
+            </div>
           </li>
         ))}
       </ul>
@@ -61,9 +71,10 @@ function RoutinesSheet({ templates, currentId, onOpen, onDelete, onNew, onClose 
 }
 
 export default function PlanScreen({
-  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onNew, onShare, onSettings,
+  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onRenameTemplate, onNew, onShare, onSettings,
 }) {
   const [routinesOpen, setRoutinesOpen] = useState(false);
+  const [savingAs, setSavingAs] = useState(false);
   const items = draft.tasks.map((t) => ({ key: t.id, ...t }));
   const setItems = (next) => onChange({ ...draft, tasks: next.map(({ key, name, minutes }) => ({ id: key, name, minutes })) });
   const saved = templates.some((t) => t.id === draft.templateId);
@@ -87,26 +98,21 @@ export default function PlanScreen({
 
       <section className="mt-5 rounded-3xl bg-zinc-900/80 p-5 ring-1 ring-white/5">
         <Hero draft={draft} now={now} />
-        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
+        <div className="mt-5 border-t border-white/5 pt-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-zinc-500">Total</p>
             <p className="text-xl font-medium tabular-nums text-zinc-100">{formatMinutes(totalMinutes(draft.tasks) * 60000)}</p>
           </div>
-          <label className="block">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">Deadline</span>
-            <input type="time" aria-label="Deadline" value={draft.deadline} required
-              onChange={(e) => e.target.value && onChange({ ...draft, deadline: e.target.value })}
-              className="block w-full bg-transparent text-xl font-medium tabular-nums text-zinc-100 focus:outline-none [color-scheme:dark]" />
-          </label>
         </div>
       </section>
 
       <h2 className="mb-2 mt-7 text-sm font-medium uppercase tracking-widest text-zinc-500">Tarefas</h2>
       <TaskListEditor items={items} onChange={setItems} />
+      <DeadlineField value={draft.deadline} onChange={(deadline) => onChange({ ...draft, deadline })} />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Button variant="secondary" onClick={onSave} disabled={!draft.tasks.length}>{saved ? 'Salvar alterações' : 'Salvar rotina'}</Button>
-        {saved && <Button variant="ghost" onClick={onSaveAsNew}>Salvar como nova</Button>}
+        {saved && <Button variant="ghost" onClick={() => setSavingAs(true)} disabled={!draft.tasks.length}>Salvar como…</Button>}
         <Button variant="ghost" onClick={onShare} disabled={!draft.tasks.length}>Copiar link</Button>
       </div>
 
@@ -123,8 +129,13 @@ export default function PlanScreen({
           onClose={() => setRoutinesOpen(false)}
           onOpen={(t) => { onOpenTemplate(t); setRoutinesOpen(false); }}
           onDelete={onDeleteTemplate}
+          onRename={onRenameTemplate}
           onNew={() => { onNew(); setRoutinesOpen(false); }}
         />
+      )}
+      {savingAs && (
+        <RoutineNameSheet initialName={draft.name} mode="copy" onCancel={() => setSavingAs(false)}
+          onSave={(name) => { onSaveAsNew(name); setSavingAs(false); }} />
       )}
     </div>
   );

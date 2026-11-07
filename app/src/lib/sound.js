@@ -4,11 +4,15 @@ import { LEVEL } from './alerts';
 
 // [frequency Hz, start s, duration s, gain, wave]
 const TONES = {
-  [LEVEL.five]: [[660, 0, 0.35, 0.18, 'sine']],
-  [LEVEL.one]: [[880, 0, 0.18, 0.25, 'triangle'], [880, 0.28, 0.18, 0.25, 'triangle']],
+  [LEVEL.five]: [[740, 0, 0.3, 0.3, 'triangle'], [988, 0.42, 0.4, 0.3, 'triangle']],
+  [LEVEL.one]: [
+    [880, 0, 0.26, 0.36, 'square'], [1046, 0.4, 0.26, 0.36, 'square'],
+    [880, 0.8, 0.4, 0.36, 'square'],
+  ],
   [LEVEL.zero]: [
-    [988, 0, 0.16, 0.35, 'square'], [784, 0.2, 0.16, 0.35, 'square'],
-    [988, 0.4, 0.16, 0.35, 'square'], [784, 0.6, 0.3, 0.35, 'square'],
+    [988, 0, 0.28, 0.44, 'square'], [784, 0.38, 0.28, 0.44, 'square'],
+    [988, 0.76, 0.28, 0.44, 'square'], [784, 1.14, 0.28, 0.44, 'square'],
+    [988, 1.52, 0.28, 0.44, 'square'], [784, 1.9, 0.6, 0.44, 'square'],
   ],
 };
 
@@ -41,6 +45,8 @@ export function playSound(level) {
       osc.frequency.value = frequency;
       amp.gain.setValueAtTime(0.0001, t0 + start);
       amp.gain.exponentialRampToValueAtTime(gain, t0 + start + 0.02);
+      // Hold the tone at full strength before releasing it; a long decay made alerts faint.
+      amp.gain.setValueAtTime(gain, t0 + start + duration - 0.08);
       amp.gain.exponentialRampToValueAtTime(0.0001, t0 + start + duration);
       osc.connect(amp).connect(ctx.destination);
       osc.start(t0 + start);

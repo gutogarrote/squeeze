@@ -241,9 +241,10 @@ export function extendDeadline(run, nowMs, ms = FIVE_MIN_MS) {
 
 // Edit mode during a run (specifications.md §7.2).
 // edit: { tasks: [{ id?, name, estimateMs }] — pending tasks in their new order (tasks
-// without id, or with an unknown id, are new); deadlineMs? }
+// without id, or with an unknown id, are new); deadlineMs?, name? }
 export function applyEdit(run, edit, nowMs) {
   const r = commit(clone(run), nowMs);
+  if (typeof edit.name === 'string') r.name = edit.name.trim() || 'Rotina';
   const previous = currentTask(r);
   const done = r.tasks.filter((t) => t.status === 'done');
   const oldPending = r.tasks.filter((t) => t.status === 'pending');
