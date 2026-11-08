@@ -388,3 +388,11 @@ export function planSummary(tasks, deadlineMs, nowMs) {
     factor: totalMs > 0 ? Math.min(1, availableMs / totalMs) : 1,
   };
 }
+
+// When everything would end if the tasks took exactly their estimates from now on
+// (minus what each already consumed), rounded up to the whole minute a deadline can hold.
+// tasks: [{ estimateMs, consumedMs? }]
+export function finishFromNow(tasks, nowMs) {
+  const needed = sum((tasks || []).map((t) => Math.max(0, (Number(t.estimateMs) || 0) - (t.consumedMs || 0))));
+  return Math.ceil((nowMs + needed) / MIN_MS) * MIN_MS;
+}

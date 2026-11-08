@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import Sheet, { Button } from './Sheet';
 import TaskListEditor, { cleanItems } from './TaskListEditor';
 import DeadlineField from './DeadlineField';
+import FinishPreview from './FinishPreview';
 import { formatClock, nextOccurrence } from '../lib/clock';
 import { LIMITS } from '../lib/routineLink';
+import { finishFromNow } from '../lib/engine';
 
 const MIN_MS = 60000;
 
@@ -15,6 +17,11 @@ export default function RunEditor({ view, now, onSave, onCancel }) {
   const [items, setItems] = useState(() => view.tasks
     .filter((t) => t.status === 'pending')
     .map((t) => ({ key: t.id, id: t.id, name: t.name, minutes: Math.max(1, Math.round(t.estimateMs / MIN_MS)) })));
+
+  // Time already spent on each pending task does not need to be done again.
+  const consumed = Object.fromEntries(view.tasks.map((t) => [t.id, t.consumedMs]));
+  const finishMs = finishFromNow(items.map((t) => ({ estimateMs: (Number(t.minutes) || 0) * MIN_MS, consumedMs: consumed[t.id] || 0 })), now);
+  const deadlineMs = clock !== initialClock ? nextOccurrence(clock, now) : view.deadlineMs;
 
   function save() {
     const tasks = cleanItems(items).map((t) => ({ id: t.id, name: t.name, estimateMs: t.minutes * MIN_MS }));
@@ -38,6 +45,10 @@ export default function RunEditor({ view, now, onSave, onCancel }) {
         Tarefas pendentes, na ordem. A primeira é a atual. Concluídas não aparecem aqui: reative-as na timeline.
       </p>
       <TaskListEditor items={items} onChange={setItems} />
+      {items.length > 0 && (
+        <FinishPreview label="Seguindo as estimativas a partir de agora, termina às" finishMs={finishMs}
+          deadlineMs={deadlineMs} deadlineClock={clock} onUse={setClock} />
+      )}
       <DeadlineField value={clock} onChange={setClock} />
     </Sheet>
   );

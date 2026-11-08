@@ -19,6 +19,9 @@ independente, com build e deploy próprios. A especificação completa está em
 deadline ao final da lista. O app mostra em destaque o horário ideal de início (deadline menos a soma das
 estimativas). Se esse horário já passou, mostra o atraso e quanto as tarefas serão comprimidas.
 O deadline vale a próxima ocorrência do horário: às 23h, escolher 01:00 significa amanhã.
+Acima do deadline, o app mostra a que horas tudo terminaria se você começasse agora, quanto sobra
+ou passa do deadline, e um botão para usar esse horário como deadline. O mesmo aparece em **Editar**
+durante a rotina.
 
 **Começar.** A rotina só começa quando você toca em **Começar**.
 

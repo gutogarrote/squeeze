@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import TaskListEditor from '../components/TaskListEditor';
 import Sheet, { Button } from '../components/Sheet';
 import DeadlineField from '../components/DeadlineField';
+import FinishPreview from '../components/FinishPreview';
 import RoutineNameSheet from '../components/RoutineNameSheet';
 import { formatClock, formatMinutes, nextOccurrence } from '../lib/clock';
-import { planSummary, totalMinutes } from '../lib/engine';
+import { finishFromNow, planSummary, totalMinutes } from '../lib/engine';
 
 function Hero({ draft, now }) {
   const deadlineMs = nextOccurrence(draft.deadline, now);
@@ -108,6 +109,15 @@ export default function PlanScreen({
 
       <h2 className="mb-2 mt-7 text-sm font-medium uppercase tracking-widest text-zinc-500">Tarefas</h2>
       <TaskListEditor items={items} onChange={setItems} />
+      {draft.tasks.length > 0 && (
+        <FinishPreview
+          label="Começando agora, termina às"
+          finishMs={finishFromNow(draft.tasks.map((t) => ({ estimateMs: (Number(t.minutes) || 0) * 60000 })), now)}
+          deadlineMs={nextOccurrence(draft.deadline, now)}
+          deadlineClock={draft.deadline}
+          onUse={(deadline) => onChange({ ...draft, deadline })}
+        />
+      )}
       <DeadlineField value={draft.deadline} onChange={(deadline) => onChange({ ...draft, deadline })} />
 
       <div className="mt-4 flex flex-wrap gap-2">
