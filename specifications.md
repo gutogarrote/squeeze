@@ -43,6 +43,11 @@ O usuário pode:
 
 O campo de deadline fica ao final da lista de tarefas, também na edição durante a execução.
 
+Logo acima dele, o app mostra **a que horas a rotina terminaria se começasse agora** (agora + soma das
+estimativas, arredondado para cima ao minuto) e quanto sobra ou passa do deadline. O botão
+**Usar HH:MM como deadline** troca o deadline por esse horário, exato. Depois da meia-noite mostra só o
+horário (ex.: às 23:12, com 73 min de tarefas, 00:25), que vale como próxima ocorrência.
+
 ### Horário ideal de início
 
 `início ideal = deadline − soma das estimativas`.
@@ -200,6 +205,9 @@ Ao salvar uma edição durante a execução:
   com as tarefas ainda por fazer, e reduzir uma estimativa faz as outras crescerem.
 - **Reordenação:** a primeira pendente vira a atual. Se mudou, a atual anterior fica pausada como num adiamento.
 - **Deadline:** adiar o deadline **dá** tempo às pendentes; antecipá-lo **tira** tempo (folga primeiro).
+- **Término seguindo as estimativas:** como no planejamento, a edição mostra a que horas tudo terminaria
+  a partir de agora (o que falta de cada estimativa, descontado o tempo já consumido) e permite usar esse
+  horário como deadline.
 - O recálculo é imediato.
 
 É assim que se responde "o que ainda cabe?": quem adianta as tarefas vê as próximas crescerem (ou a

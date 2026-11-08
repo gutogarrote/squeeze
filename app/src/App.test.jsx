@@ -179,6 +179,50 @@ describe('planning', () => {
   });
 });
 
+describe('finish if started now', () => {
+  test('the planner shows when the routine would end and can use it as the deadline', () => {
+    render(<App clock={clock} />);
+    const preview = screen.getByRole('region', { name: 'Término começando agora' });
+    expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:45');
+    expect(preview).toHaveTextContent('sobra 15 min antes do deadline');
+    fireEvent.click(screen.getByRole('button', { name: 'Mais 5 minutos em Almoço' }));
+    expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:50');
+    fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '14:00' } });
+    expect(preview).toHaveTextContent('passa 50 min do deadline');
+    fireEvent.click(within(preview).getByRole('button', { name: 'Usar 14:50 como deadline' }));
+    expect(screen.getByLabelText('Deadline')).toHaveValue('14:50');
+    expect(preview).toHaveTextContent('exatamente no deadline');
+    expect(within(preview).queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('ideal-start')).toHaveTextContent('12:20');
+  });
+
+  test('past midnight it shows only the time, and the deadline becomes the next day', () => {
+    nowMs = local(23, 12);
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Orçamento' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Preparar saída' }));
+    fireEvent.change(screen.getByLabelText('Minutos de Almoço'), { target: { value: '28' } });
+    const preview = screen.getByRole('region', { name: 'Término começando agora' });
+    expect(within(preview).getByTestId('finish-time')).toHaveTextContent(/^00:25$/);
+    fireEvent.click(within(preview).getByRole('button', { name: 'Usar 00:25 como deadline' }));
+    expect(screen.getByTestId('ideal-start')).toHaveTextContent('23:12');
+  });
+
+  test('during a run it counts only what is missing and can move the deadline', () => {
+    startExample();
+    advance(10 * MIN);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar rotina' });
+    const preview = within(dialog).getByRole('region', { name: 'Término começando agora' });
+    expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:45');
+    expect(preview).toHaveTextContent('sobra 15 min antes do deadline');
+    fireEvent.click(within(preview).getByRole('button', { name: 'Usar 14:45 como deadline' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    expect(screen.getByRole('region', { name: 'Deadline da rotina' })).toHaveTextContent('Deadline 14:45');
+    expect(screen.queryByRole('group', { name: 'Folga' })).not.toBeInTheDocument();
+  });
+});
+
 describe('running', () => {
   test('the countdown and deadline controls follow tasks and the buffer', () => {
     startExample();

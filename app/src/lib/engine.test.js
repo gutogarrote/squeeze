@@ -1,6 +1,6 @@
 import {
   MIN_MS, addTimeToCurrent, applyEdit, completeTask, extendDeadline, planSummary, postponeTask,
-  reactivateTask, releaseBuffer, setDeadline, startRun, viewRun, claimOf,
+  reactivateTask, releaseBuffer, setDeadline, startRun, viewRun, claimOf, finishFromNow,
 } from './engine';
 
 // 14:00 on an arbitrary day; times in the examples are offsets from it.
@@ -340,5 +340,13 @@ describe('edit mode during a run', () => {
     expect(min(v.current.remainingMs)).toBe(20);
     expect(min(v.bufferMs)).toBe(30);
     expectInvariant(run, at(14, 10));
+  });
+});
+
+describe('finishFromNow', () => {
+  test('adds what is still missing of each estimate and rounds up to the minute', () => {
+    expect(finishFromNow([{ estimateMs: 30 * MIN_MS }, { estimateMs: 20 * MIN_MS, consumedMs: 5 * MIN_MS }], at(14))).toBe(at(14, 45));
+    expect(finishFromNow([{ estimateMs: 30 * MIN_MS, consumedMs: 40 * MIN_MS }], at(14))).toBe(at(14));
+    expect(finishFromNow([{ estimateMs: 10 * MIN_MS }], at(14, 0, 20))).toBe(at(14, 11));
   });
 });

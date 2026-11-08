@@ -29,6 +29,13 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
 
 ## Registro
 
+### 2026-11-08 — Término se começar agora
+
+- No planejamento e na edição durante a rotina, acima do deadline: "Começando agora, termina às HH:MM",
+  quanto sobra ou passa do deadline e o botão "Usar HH:MM como deadline" (horário exato; depois da
+  meia-noite só o horário). Na rotina, desconta o que cada tarefa já consumiu (`finishFromNow` no motor).
+- Verificação: lint sem avisos, testes e build; tela conferida no Chromium com viewport de iPhone 13.
+
 ### 2026-11-07 — Linha do tempo no topo e ações no fim
 
 - Card fixo no topo da execução: início à esquerda, agora no meio, deadline à direita; linha colorida
