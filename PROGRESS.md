@@ -29,6 +29,18 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
 
 ## Registro
 
+### Reordenação e nomes das rotinas — branch feat/saved-routine-order
+
+- Nova branch a partir da main atualizada (389f573), preservando as melhorias de timeline e previsão de término.
+- Botões ↑/↓ nas rotinas salvas; ordem persistida em localStorage, limites desabilitados e identificação
+  por ID para suportar nomes repetidos. Reordenar preserva as edições pendentes do planejamento.
+- Links sem nome usam "Rotina fim HH:MM", com o deadline do link. Nomes explícitos são preservados;
+  os dois-pontos também funcionam ao copiar e reabrir o link. Rotinas já salvas mantêm seus nomes.
+- Documentação do formato v3 atualizada, incluindo os exemplos publicados em /instrucoes.
+- Verificação: lint sem avisos, 195 testes e build de produção; Chromium em 320/390 px com salvamento,
+  reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
+
+
 ### 2026-11-08 — Término se começar agora
 
 - No planejamento e na edição durante a rotina, acima do deadline: "Começando agora, termina às HH:MM",

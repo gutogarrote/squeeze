@@ -47,6 +47,52 @@ function startExample() {
 }
 
 describe('planning', () => {
+  test('saved routines move up and down, keep their content and preserve their order after reload', () => {
+    const templates = ['Manhã', 'Tarde', 'Noite'].map((name, i) => ({
+      id: `saved-${i}`, name, deadline: '20:30', templateId: null,
+      tasks: [{ id: `task-${i}`, name: `Tarefa ${i}`, minutes: 10 }],
+    }));
+    localStorage.setItem(KEYS.templates, JSON.stringify(templates));
+    const { unmount } = render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Tarde' }));
+    fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Edição pendente' } });
+    const draft = localStorage.getItem(KEYS.draft);
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    const names = () => within(screen.getByRole('list', { name: 'Rotinas salvas' }))
+      .getAllByRole('button', { name: /^Abrir / }).map((b) => b.getAttribute('aria-label'));
+    expect(screen.getByRole('button', { name: 'Subir rotina Manhã' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Descer rotina Noite' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Subir rotina Tarde' }));
+    expect(names()).toEqual(['Abrir Tarde', 'Abrir Manhã', 'Abrir Noite']);
+    fireEvent.click(screen.getByRole('button', { name: 'Descer rotina Manhã' }));
+    expect(names()).toEqual(['Abrir Tarde', 'Abrir Noite', 'Abrir Manhã']);
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([templates[1], templates[2], templates[0]]);
+    expect(localStorage.getItem(KEYS.draft)).toBe(draft);
+    unmount();
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    expect(names()).toEqual(['Abrir Tarde', 'Abrir Noite', 'Abrir Manhã']);
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Edição pendente');
+  });
+
+  test('routines with identical names are moved by identity and a single routine cannot move', () => {
+    const templates = [10, 20].map((minutes) => ({
+      id: `saved-${minutes}`, name: 'Mesmo nome', deadline: '20:30', templateId: null,
+      tasks: [{ id: `task-${minutes}`, name: 'Ler', minutes }],
+    }));
+    localStorage.setItem(KEYS.templates, JSON.stringify(templates));
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Descer rotina Mesmo nome' })[0]);
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([templates[1], templates[0]]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Excluir Mesmo nome' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir', exact: true }));
+    expect(screen.getByRole('button', { name: 'Subir rotina Mesmo nome' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Descer rotina Mesmo nome' })).toBeDisabled();
+  });
+
   test('shows the ideal start, the total and the buffer of starting now', () => {
     render(<App clock={clock} />);
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('12:35');
@@ -429,6 +475,19 @@ describe('edit mode and ending', () => {
 
 describe('links', () => {
   const link = '/?rotina=3.1800.Ler-30.Jantar-40&nome=Noite';
+
+  test('an unnamed imported routine saves and reopens with its deadline in the name', () => {
+    window.history.replaceState(null, '', '/?rotina=3.2030.Ler-30');
+    const { unmount } = render(<App clock={clock} />);
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Rotina fim 20:30');
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Rotina fim 20:30');
+    unmount();
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Rotina fim 20:30' }));
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Rotina fim 20:30');
+  });
 
   test('a valid link opens in the planner and leaves the address bar', () => {
     window.history.replaceState(null, '', link);

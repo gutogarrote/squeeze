@@ -32,7 +32,7 @@ function Hero({ draft, now }) {
   );
 }
 
-function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onNew, onClose }) {
+function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onMove, onNew, onClose }) {
   const [confirming, setConfirming] = useState(null);
   const [renaming, setRenaming] = useState(null);
   if (renaming) {
@@ -43,12 +43,20 @@ function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onNew
     <Sheet title="Rotinas salvas" onClose={onClose}
       footer={<Button variant="secondary" className="w-full" onClick={onNew}>Nova rotina</Button>}>
       {!templates.length && <p className="py-4 text-zinc-400">Nenhuma rotina salva ainda. Use “Salvar” no planejamento.</p>}
-      <ul className="space-y-2">
-        {templates.map((t) => (
+      <ul className="space-y-2" aria-label="Rotinas salvas">
+        {templates.map((t, index) => (
           <li key={t.id} className={`rounded-xl p-3 ring-1 ${t.id === currentId ? 'bg-lime-300/10 ring-lime-300/30' : 'bg-zinc-900 ring-white/5'}`}>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-zinc-100">{t.name}</p>
-              <p className="text-sm text-zinc-500">{t.tasks.length} tarefas · {formatMinutes(totalMinutes(t.tasks) * 60000)} · até {t.deadline}</p>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-zinc-100">{t.name}</p>
+                <p className="text-sm text-zinc-500">{t.tasks.length} tarefas · {formatMinutes(totalMinutes(t.tasks) * 60000)} · até {t.deadline}</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button variant="ghost" className="px-3" aria-label={`Subir rotina ${t.name}`}
+                  disabled={index === 0} onClick={() => onMove(t.id, -1)}>↑</Button>
+                <Button variant="ghost" className="px-3" aria-label={`Descer rotina ${t.name}`}
+                  disabled={index === templates.length - 1} onClick={() => onMove(t.id, 1)}>↓</Button>
+              </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               {confirming === t.id ? (
@@ -72,7 +80,7 @@ function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onNew
 }
 
 export default function PlanScreen({
-  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onRenameTemplate, onNew, onShare, onSettings,
+  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onRenameTemplate, onMoveTemplate, onNew, onShare, onSettings,
 }) {
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [savingAs, setSavingAs] = useState(false);
@@ -140,6 +148,7 @@ export default function PlanScreen({
           onOpen={(t) => { onOpenTemplate(t); setRoutinesOpen(false); }}
           onDelete={onDeleteTemplate}
           onRename={onRenameTemplate}
+          onMove={onMoveTemplate}
           onNew={() => { onNew(); setRoutinesOpen(false); }}
         />
       )}
