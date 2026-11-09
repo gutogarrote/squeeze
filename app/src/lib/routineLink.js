@@ -7,7 +7,6 @@
 export const LINK_ERROR = 'Não foi possível abrir a rotina do link. Nada foi alterado.';
 export const NAME_ERROR = 'O link reserva _ para espaços. Remova underscores dos nomes.';
 export const LIMITS = { tasks: 40, taskMinutes: 720, totalMinutes: 1440, nameLength: 80, valueLength: 6000 };
-export const DEFAULT_NAME = 'Rotina importada';
 
 const ESCAPABLE = new Set(Array.from({ length: 95 }, (_, i) => String.fromCharCode(i + 32))
   .filter((char) => !/[A-Za-z0-9_ -]/.test(char)));
@@ -102,8 +101,9 @@ export function parseRoutineLink(search) {
       if (total > LIMITS.totalMinutes) fail('routine-too-long');
       return { name: decodeName(entry.slice(0, dash)), minutes };
     });
-    const name = params.nome ? decodeName(decodeValue(params.nome[0])) : DEFAULT_NAME;
-    return { status: 'valid', plan: { name, deadline: `${time.slice(0, 2)}:${time.slice(2)}`, tasks } };
+    const deadline = `${time.slice(0, 2)}:${time.slice(2)}`;
+    const name = params.nome ? decodeName(decodeValue(params.nome[0])) : `Rotina fim ${deadline}`;
+    return { status: 'valid', plan: { name, deadline, tasks } };
   } catch (error) {
     return { status: 'invalid', error: LINK_ERROR, reason: error.reason || 'unexpected-input' };
   }

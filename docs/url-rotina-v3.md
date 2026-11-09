@@ -19,7 +19,7 @@ O app calcula o horário ideal de início: deadline menos a soma das durações.
 - `3` é a versão.
 - `HHMM` é o deadline em 24 horas, com quatro dígitos: `0930`, `1500`, `0100`.
 - Cada tarefa é `Nome-minutos`, separada da seguinte por ponto. Os minutos são o que vem depois do último hífen, então `Treino-5-30` é a tarefa "Treino-5" com 30 minutos.
-- `nome` é opcional. Sem ele, a rotina se chama "Rotina importada".
+- `nome` é opcional. Sem ele, a rotina se chama "Rotina fim HH:MM", usando o deadline do link (ex.: "Rotina fim 20:30").
 
 ## Limites
 
@@ -60,7 +60,7 @@ Espaço vira `_`. Underscore literal não é suportado. Letras, números e `-` v
 | Tarde | `3.1500.Orçamento-60.Guardar_equipamentos-20.Banho_e_troca_de_roupa-25.Almoço-20.Preparar_saída-20` | [Abrir tarde](https://squeeze.ggarrote.workers.dev/?rotina=3.1500.Or%C3%A7amento-60.Guardar_equipamentos-20.Banho_e_troca_de_roupa-25.Almo%C3%A7o-20.Preparar_sa%C3%ADda-20&nome=Tarde) | Rotina "Tarde": Orçamento 60, Guardar equipamentos 20, Banho e troca de roupa 25, Almoço 20, Preparar saída 20; deadline 15:00; início ideal 12:35 |
 | Pontuação | `3.0930.Ligar_p~2F_Ana~3F-10.Revisar_~28v2~2E1~29-15` | [Abrir pontuação](https://squeeze.ggarrote.workers.dev/?rotina=3.0930.Ligar_p~2F_Ana~3F-10.Revisar_~28v2~2E1~29-15&nome=Manh%C3%A3_de_trabalho) | Rotina "Manhã de trabalho": Ligar p/ Ana? 10, Revisar (v2.1) 15; deadline 09:30 |
 | Emoji e hífens | `3.0700.☕_Café-5.Pré-treino-10.Treino-5-30` | [Abrir treino](https://squeeze.ggarrote.workers.dev/?rotina=3.0700.%E2%98%95_Caf%C3%A9-5.Pr%C3%A9-treino-10.Treino-5-30&nome=Treino) | Rotina "Treino": ☕ Café 5, Pré-treino 10, Treino-5 30; deadline 07:00 |
-| Depois da meia-noite | `3.0100.Lavar_louça-20.Ler-30` | [Abrir noite](https://squeeze.ggarrote.workers.dev/?rotina=3.0100.Lavar_lou%C3%A7a-20.Ler-30) | Rotina importada: Lavar louça 20, Ler 30; deadline 01:00 (amanhã, se aberto antes da meia-noite) |
+| Depois da meia-noite | `3.0100.Lavar_louça-20.Ler-30` | [Abrir noite](https://squeeze.ggarrote.workers.dev/?rotina=3.0100.Lavar_lou%C3%A7a-20.Ler-30) | Rotina fim 01:00: Lavar louça 20, Ler 30; deadline 01:00 (amanhã, se aberto antes da meia-noite) |
 
 ## Ao abrir o link
 

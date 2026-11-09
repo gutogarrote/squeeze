@@ -1,4 +1,4 @@
-import { DEFAULT_NAME, parseRoutineLink, serializeRoutineLink } from './routineLink';
+import { parseRoutineLink, serializeRoutineLink } from './routineLink';
 
 const example = '?rotina=3.1500.Orçamento-60.Guardar_equipamentos-20.Banho_e_troca_de_roupa-25.Almoço-20.Preparar_saída-20&nome=Tarde';
 
@@ -20,7 +20,13 @@ describe('parseRoutineLink', () => {
     const parsed = parseRoutineLink('?rotina=3.0130.Almo%C3%A7o-20.Caf%C3%A9_%E2%98%95-5.Treino-5-30.Ligar_p~2F_Ana~3F-10');
     expect(parsed.plan.tasks.map((t) => t.name)).toEqual(['Almoço', 'Café ☕', 'Treino-5', 'Ligar p/ Ana?']);
     expect(parsed.plan.deadline).toBe('01:30');
-    expect(parsed.plan.name).toBe(DEFAULT_NAME);
+    expect(parsed.plan.name).toBe('Rotina fim 01:30');
+  });
+  test.each(['11:40', '20:30', '00:05'])('names an unnamed link after its deadline %s', (deadline) => {
+    const parsed = parseRoutineLink(`?rotina=3.${deadline.replace(':', '')}.Ler-10`);
+    expect(parsed.plan.name).toBe(`Rotina fim ${deadline}`);
+    const url = serializeRoutineLink('https://squeeze.example/', parsed.plan);
+    expect(parseRoutineLink(new URL(url).search)).toEqual(parsed);
   });
   test('absent without rotina', () => {
     expect(parseRoutineLink('?x=1')).toEqual({ status: 'absent' });

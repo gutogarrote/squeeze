@@ -56,7 +56,7 @@ tempo da tarefa acaba, com intensidade crescente.
 Em **Ajustes** dá para desligar os sons, manter a tela acesa e escolher o modo descanso
 (tela preta depois de 2, 5 ou 10 minutos sem toques; um toque volta).
 
-**Rotinas salvas.** Salve uma rotina com nome para reutilizar. **Salvar como…** pede um
+**Rotinas salvas.** Use ↑ e ↓ na lista para reordenar as rotinas; a ordem fica salva no aparelho. Salve uma rotina com nome para reutilizar. **Salvar como…** pede um
 nome e cria uma cópia, preservando a original. Em **Rotinas → Renomear**, mude o nome de
 uma rotina salva sem gravar outras alterações pendentes. O nome também pode ser editado
 durante a execução. Ajustes feitos durante a
@@ -70,7 +70,8 @@ que passou. Uma rotina esquecida é encerrada 12 horas depois do deadline.
 
 Um link abre uma rotina pronta no planejamento, por exemplo
 [esta tarde de trabalho](https://squeeze.ggarrote.workers.dev/?rotina=3.1500.Or%C3%A7amento-60.Guardar_equipamentos-20.Banho_e_troca_de_roupa-25.Almo%C3%A7o-20.Preparar_sa%C3%ADda-20&nome=Tarde),
-com deadline às 15:00 e início ideal às 12:35. **Copiar link** no planejamento gera o link
+com deadline às 15:00 e início ideal às 12:35. Links sem nome abrem como **Rotina fim HH:MM**, com o horário final do link.
+**Copiar link** no planejamento gera o link
 da rotina aberta. As [instruções do formato v3](docs/url-rotina-v3.md) são completas e
 podem ser entregues a uma IA para montar links; o build as publica em `/instrucoes`.
 

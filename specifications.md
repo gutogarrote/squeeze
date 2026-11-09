@@ -290,6 +290,7 @@ Não há rotinas fixas de manhã e noite. O usuário pode:
 - Criar uma rotina nova e salvá-la com nome.
 - Abrir, modificar e salvar de novo uma rotina salva.
 - **Salvar como…**: escolher um nome para uma nova cópia, preservando a rotina original.
+- Reordenar rotinas salvas com botões de subir e descer; a ordem é persistida no aparelho.
 - **Renomear** na lista de rotinas salvas: mudar só o nome, sem alterar tarefas ou deadline
   nem gravar edições pendentes no planejamento. O rascunho aberto acompanha o novo nome
   quando corresponde à rotina renomeada.
@@ -323,7 +324,7 @@ Exemplo (o plano de §3):
 - `HHMM`: deadline, obrigatório, interpretado como na §3.
 - Nomes: `_` vale espaço; pontuação usa o escape `~XX` da v2; letras acentuadas e emojis podem ir
   literalmente (ou codificados em `%XX`). Emojis são só parte do nome, opcionais.
-- `nome` é opcional; sem ele, a rotina se chama "Rotina importada".
+- `nome` é opcional; sem ele, a rotina se chama "Rotina fim HH:MM", usando o deadline do link (ex.: "Rotina fim 20:30").
 - Limites: até 40 tarefas, de 1 a 720 min cada, no máximo 1440 min no total.
 - Abrir um link cria uma rotina em planejamento, sem sobrescrever modelos salvos (o usuário pode salvá-la).
   Se houver uma execução ativa, o app pergunta antes de substituí-la.

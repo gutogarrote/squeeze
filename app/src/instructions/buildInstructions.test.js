@@ -11,7 +11,7 @@ const expectedExamples = [
   ['Tarde', '15:00', [['Orçamento', 60], ['Guardar equipamentos', 20], ['Banho e troca de roupa', 25], ['Almoço', 20], ['Preparar saída', 20]]],
   ['Manhã de trabalho', '09:30', [['Ligar p/ Ana?', 10], ['Revisar (v2.1)', 15]]],
   ['Treino', '07:00', [['☕ Café', 5], ['Pré-treino', 10], ['Treino-5', 30]]],
-  ['Rotina importada', '01:00', [['Lavar louça', 20], ['Ler', 30]]],
+  ['Rotina fim 01:00', '01:00', [['Lavar louça', 20], ['Ler', 30]]],
 ];
 
 test('every documented routine link parses, uses only supported fields, and matches intended outputs and wire values', () => {

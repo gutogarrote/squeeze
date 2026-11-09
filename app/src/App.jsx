@@ -133,6 +133,17 @@ export default function App({ clock = Date.now }) {
     if (draft.templateId === id) setDraft({ ...draft, templateId: null });
   }
 
+  function moveTemplate(id, direction) {
+    const index = templates.findIndex((t) => t.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= templates.length) return;
+    const list = templates.slice();
+    const [template] = list.splice(index, 1);
+    list.splice(target, 0, template);
+    setTemplates(list);
+    saveTemplates(list);
+  }
+
   async function share() {
     let url;
     try {
@@ -207,6 +218,7 @@ export default function App({ clock = Date.now }) {
           onOpenTemplate={(t) => setDraft(planFrom(t, t.id))}
           onDeleteTemplate={deleteTemplate}
           onRenameTemplate={renameTemplate}
+          onMoveTemplate={moveTemplate}
           onNew={() => setDraft({ name: '', deadline: draft.deadline, templateId: null, tasks: [] })}
           onShare={share}
           onSettings={() => setSheet('settings')}
