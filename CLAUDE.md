@@ -35,7 +35,10 @@ Chaves de storage: `squeeze:draft`, `squeeze:templates`, `squeeze:run`, `squeeze
   usar os exemplos de §6.4 como testes.
 - Tirar tempo: folga primeiro, depois pendentes proporcionalmente aos orçamentos. Dar tempo:
   pendentes proporcionalmente às referências; sem referência, vai para a folga.
-- A tarefa atual é sempre a primeira pendente na ordem; concluídas ficam no lugar.
+- Tipos opcionais de tarefa: `fixed` e `buffer`; ausência de tipo significa flexível. Fixas nunca
+  participam de compressão/distribuição automática; a reserva explícita absorve atrasos primeiro e
+  incorpora a folga automática. `taskTypes.js` normaliza os tipos e garante uma folga.
+- A tarefa atual é sempre a primeira pendente que não é folga na ordem; concluídas ficam no lugar.
 
 ## Comandos
 

@@ -47,6 +47,55 @@ function startExample() {
 }
 
 describe('planning', () => {
+  test('fixed and buffer selectors are exclusive, allow multiple fixed tasks and only one buffer', () => {
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Fixo: Orçamento' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Fixo: Guardar equipamentos' }));
+    expect(screen.getByRole('checkbox', { name: 'Fixo: Orçamento' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Fixo: Guardar equipamentos' })).toBeChecked();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Folga: Orçamento' }));
+    expect(screen.getByRole('checkbox', { name: 'Fixo: Orçamento' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Folga: Almoço' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '+ Adicionar tarefa' }));
+    expect(screen.getByRole('checkbox', { name: 'Folga: tarefa 6' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Remover Orçamento' }));
+    expect(screen.getByRole('checkbox', { name: 'Folga: Almoço' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Folga: Almoço' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Tarde' }));
+    expect(screen.getByRole('checkbox', { name: 'Fixo: Guardar equipamentos' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Folga: Almoço' })).toBeChecked();
+  });
+
+  test('fixed tasks and a single buffer survive running, reload, editing and restarting', () => {
+    localStorage.setItem(KEYS.draft, JSON.stringify({ name: 'Tipos', deadline: '13:30', tasks: [
+      { id: 'a', name: 'A', minutes: 10 }, { id: 'f', name: 'Fixa', minutes: 20, type: 'fixed' },
+      { id: 'b', name: 'B', minutes: 30 }, { id: 'r', name: 'Reserva', minutes: 10, type: 'buffer' },
+    ] }));
+    const { unmount } = render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    advance(25 * MIN);
+    expect(card('Próxima: Fixa')).toHaveTextContent('20 min');
+    expect(card('Próxima: B')).toHaveTextContent('25 min');
+    expect(card('Reserva')).toHaveTextContent('0 min');
+    expect(screen.queryByRole('group', { name: 'Folga', exact: true })).not.toBeInTheDocument();
+    unmount();
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar rotina' });
+    expect(within(dialog).getByRole('checkbox', { name: 'Fixo: Fixa' })).toBeChecked();
+    expect(within(dialog).getByRole('checkbox', { name: 'Folga: B' })).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Fixo: B' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar', exact: true }));
+    expect(card('Próxima: B')).toHaveTextContent('30 min');
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Recomeçar com novo deadline' }));
+    expect(screen.getByRole('checkbox', { name: 'Fixo: Fixa' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Fixo: B' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Folga: Reserva' })).toBeChecked();
+  });
+
   test('saved routines move up and down, keep their content and preserve their order after reload', () => {
     const templates = ['Manhã', 'Tarde', 'Noite'].map((name, i) => ({
       id: `saved-${i}`, name, deadline: '20:30', templateId: null,

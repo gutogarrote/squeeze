@@ -6,6 +6,7 @@ import FinishPreview from '../components/FinishPreview';
 import RoutineNameSheet from '../components/RoutineNameSheet';
 import { formatClock, formatMinutes, nextOccurrence } from '../lib/clock';
 import { finishFromNow, planSummary, totalMinutes } from '../lib/engine';
+import { typeProps } from '../lib/taskTypes';
 
 function Hero({ draft, now }) {
   const deadlineMs = nextOccurrence(draft.deadline, now);
@@ -25,7 +26,10 @@ function Hero({ draft, now }) {
         </p>
       ) : (
         <p className="mt-2 text-amber-100">
-          Atrasado {formatMinutes(-s.untilStartMs)}. Faltam <strong>{formatMinutes(s.missingMs)}</strong>: começando agora, as tarefas ficam com {Math.floor(s.factor * 100)}% da estimativa.
+          Atrasado {formatMinutes(-s.untilStartMs)}. {s.protectedDeficitMs > 0 ? 'O tempo disponível não comporta as tarefas fixas.' : s.missingMs > 0
+            ? <>Faltam <strong>{formatMinutes(s.missingMs)}</strong>: começando agora, as tarefas {draft.tasks.some((t) => t.type) ? 'flexíveis ' : ''}ficam com {Math.floor(s.factor * 100)}% da estimativa.</>
+            : 'A folga absorve o atraso, sem reduzir as outras tarefas.'}
+          {s.protectedDeficitMs > 0 && <span className="mt-2 block font-medium text-rose-300">As tarefas fixas ultrapassam o deadline em {formatMinutes(s.protectedDeficitMs)}. A duração delas será preservada.</span>}
         </p>
       )}
     </div>
@@ -85,7 +89,7 @@ export default function PlanScreen({
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [savingAs, setSavingAs] = useState(false);
   const items = draft.tasks.map((t) => ({ key: t.id, ...t }));
-  const setItems = (next) => onChange({ ...draft, tasks: next.map(({ key, name, minutes }) => ({ id: key, name, minutes })) });
+  const setItems = (next) => onChange({ ...draft, tasks: next.map((t) => ({ id: t.key, name: t.name, minutes: t.minutes, ...typeProps(t) })) });
   const saved = templates.some((t) => t.id === draft.templateId);
 
   return (

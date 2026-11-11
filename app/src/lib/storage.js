@@ -1,6 +1,7 @@
 // Local persistence (localStorage only). Every read validates and falls back safely.
 import { isClock } from './clock';
 import { LIMITS } from './routineLink';
+import { normalizeTaskTypes, typeProps } from './taskTypes';
 
 export const KEYS = {
   draft: 'squeeze:draft',
@@ -51,9 +52,9 @@ const isMinutes = (m) => Number.isInteger(m) && m >= 1 && m <= LIMITS.taskMinute
 export function normalizePlan(value) {
   if (!value || typeof value !== 'object' || !Array.isArray(value.tasks)) return null;
   if (!isClock(value.deadline) || !isText(value.name ?? '')) return null;
-  const tasks = value.tasks.slice(0, LIMITS.tasks)
+  const tasks = normalizeTaskTypes(value.tasks.slice(0, LIMITS.tasks)
     .filter((t) => t && isText(t.name) && isMinutes(t.minutes))
-    .map((t) => ({ id: typeof t.id === 'string' ? t.id : makeId('p'), name: t.name, minutes: t.minutes }));
+    .map((t) => ({ id: typeof t.id === 'string' ? t.id : makeId('p'), name: t.name, minutes: t.minutes, ...typeProps(t) })));
   return {
     ...(typeof value.id === 'string' ? { id: value.id } : {}),
     name: value.name || '',
@@ -67,7 +68,8 @@ const isMs = (n) => Number.isFinite(n);
 function isRun(run) {
   return !!run && run.version === 1 && Array.isArray(run.tasks) && isMs(run.deadlineMs) &&
     isMs(run.activatedAtMs) && isMs(run.bufferMs) && Number.isInteger(run.nextId) &&
-    run.tasks.every((t) => t && typeof t.id === 'string' && typeof t.name === 'string' &&
+    run.tasks.filter((t) => t?.type === 'buffer').length <= 1 &&
+    run.tasks.every((t) => t && [undefined, 'fixed', 'buffer'].includes(t.type) && typeof t.id === 'string' && typeof t.name === 'string' &&
       (t.status === 'pending' || t.status === 'done') &&
       ['estimateMs', 'consumedMs', 'budgetMs', 'absorbedMs', 'doneLeftoverMs'].every((k) => isMs(t[k])));
 }
@@ -101,7 +103,7 @@ export const saveSettings = (settings) => write(KEYS.settings, settings);
 export function upsertTemplate(list, plan) {
   const id = plan.id || plan.templateId || makeId('r');
   const template = { id, name: plan.name.trim() || 'Sem nome', deadline: plan.deadline,
-    tasks: plan.tasks.map(({ name, minutes }) => ({ name, minutes })) };
+    tasks: normalizeTaskTypes(plan.tasks).map((t) => ({ name: t.name, minutes: t.minutes, ...typeProps(t) })) };
   const exists = list.some((t) => t.id === id);
   return { id, list: exists ? list.map((t) => (t.id === id ? template : t)) : [...list, template] };
 }

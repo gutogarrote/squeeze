@@ -6,7 +6,7 @@
 // { id, name, status: 'pending'|'done', estimateMs, consumedMs, budgetMs, absorbedMs,
 //   doneLeftoverMs }.
 //
-// The current task is always the first pending task in array order. Its consumedMs is
+// The current task is the first pending non-buffer task in array order. Its consumedMs is
 // "committed" up to activatedAtMs; the time since then is added on every operation.
 //
 // Values kept apart (never mixed up):
@@ -18,10 +18,11 @@
 //  - overrun: consumed − budget (min 0); absorbedMs is the part of it already taken
 //    from the buffer and the other tasks.
 //
-// Invariant while the deadline has not passed:
+// Invariant while the deadline has not passed and fixed tasks still fit:
 //   now + Σ claims of pending tasks + buffer = deadline.
 
 import { splitCapped, splitProportional } from './split';
+import { normalizeTaskTypes, taskType, typeProps } from './taskTypes';
 
 export const MIN_MS = 60000;
 export const FIVE_MIN_MS = 5 * MIN_MS;
@@ -36,7 +37,7 @@ const clone = (run) => ({ ...run, tasks: run.tasks.map((t) => ({ ...t })) });
 const pendingIndexes = (run) => run.tasks.map((t, i) => (t.status === 'pending' ? i : -1)).filter((i) => i >= 0);
 
 export function currentIndex(run) {
-  return run.tasks.findIndex((t) => t.status === 'pending');
+  return run.tasks.findIndex((t) => t.status === 'pending' && taskType(t) !== 'buffer');
 }
 
 export function currentTask(run) {
@@ -44,10 +45,16 @@ export function currentTask(run) {
   return i < 0 ? null : run.tasks[i];
 }
 
-function newTask(run, { name, estimateMs }) {
+function newTask(run, { name, estimateMs, type }) {
   const id = 't' + run.nextId;
   run.nextId += 1;
-  return { id, name, status: 'pending', estimateMs, consumedMs: 0, budgetMs: 0, absorbedMs: 0, doneLeftoverMs: 0 };
+  return { id, name, ...typeProps({ type }), status: 'pending', estimateMs, consumedMs: 0, budgetMs: 0, absorbedMs: 0, doneLeftoverMs: 0 };
+}
+
+function storeBuffer(run, amount) {
+  const buffer = run.tasks.find((t) => t.status === 'pending' && taskType(t) === 'buffer');
+  if (buffer) addBudget(buffer, amount);
+  else run.bufferMs += amount;
 }
 
 // Gives `ms` more to a task, counted from now: an overrun already absorbed becomes part of
@@ -66,8 +73,14 @@ function take(run, ms, exclude = []) {
   const fromBuffer = Math.min(run.bufferMs, rest);
   run.bufferMs -= fromBuffer;
   rest -= fromBuffer;
+  const buffers = pendingIndexes(run).filter((i) => taskType(run.tasks[i]) === 'buffer' && !exclude.includes(i));
+  buffers.forEach((i) => {
+    const amount = Math.min(rest, claimOf(run.tasks[i]));
+    run.tasks[i].budgetMs -= amount;
+    rest -= amount;
+  });
   if (!rest) return 0;
-  const idx = pendingIndexes(run).filter((i) => !exclude.includes(i));
+  const idx = pendingIndexes(run).filter((i) => !exclude.includes(i) && taskType(run.tasks[i]) === 'normal');
   const caps = idx.map((i) => claimOf(run.tasks[i]));
   const parts = splitCapped(rest, caps, caps);
   idx.forEach((i, k) => { run.tasks[i].budgetMs -= parts[k]; });
@@ -79,9 +92,9 @@ function take(run, ms, exclude = []) {
 function give(run, ms, exclude = []) {
   const amount = Math.max(0, Math.round(ms));
   if (!amount) return;
-  const idx = pendingIndexes(run).filter((i) => !exclude.includes(i));
+  const idx = pendingIndexes(run).filter((i) => !exclude.includes(i) && taskType(run.tasks[i]) === 'normal');
   const weights = idx.map((i) => referenceOf(run.tasks[i]));
-  if (sum(weights) <= 0) { run.bufferMs += amount; return; }
+  if (sum(weights) <= 0) { storeBuffer(run, amount); return; }
   const parts = splitProportional(amount, weights);
   idx.forEach((i, k) => addBudget(run.tasks[i], parts[k]));
 }
@@ -118,7 +131,7 @@ function settleSlack(run, nowMs) {
   else if (slack < 0) {
     // Deadline already passed: nothing is reserved ahead of us anymore.
     run.bufferMs = 0;
-    pending.forEach((t) => { if (claimOf(t) > 0) t.budgetMs = t.consumedMs; });
+    pending.forEach((t) => { if (taskType(t) !== 'fixed' && claimOf(t) > 0) t.budgetMs = t.consumedMs; });
   }
 }
 
@@ -138,17 +151,17 @@ export function startRun(plan, nowMs) {
     nextId: 1,
     tasks: [],
   };
-  run.tasks = (plan.tasks || []).map((t) => newTask(run, { name: t.name, estimateMs: Math.round(t.minutes * MIN_MS) }));
+  run.tasks = normalizeTaskTypes(plan.tasks || []).map((t) => newTask(run, { ...t, estimateMs: Math.round(t.minutes * MIN_MS) }));
   const estimates = run.tasks.map((t) => t.estimateMs);
   const total = sum(estimates);
   const available = Math.max(0, plan.deadlineMs - nowMs);
   if (available >= total) {
     run.tasks.forEach((t) => { t.budgetMs = t.estimateMs; });
-    run.bufferMs = available - total;
+    storeBuffer(run, available - total);
   } else {
-    // Late start: every task, the first included, is compressed by the same factor.
-    const budgets = splitProportional(available, estimates);
-    run.tasks.forEach((t, i) => { t.budgetMs = budgets[i]; });
+    // Reserve fixed durations, consume the buffer first, then squeeze flexible tasks.
+    run.tasks.forEach((t) => { t.budgetMs = t.estimateMs; });
+    take(run, total - available);
   }
   return run;
 }
@@ -160,12 +173,14 @@ export function completeTask(run, id, nowMs) {
   const r = commit(clone(run), nowMs);
   const i = r.tasks.findIndex((t) => t.id === id);
   if (i < 0 || r.tasks[i].status !== 'pending') return run;
-  const previous = currentTask(r).id;
+  const previous = currentTask(r)?.id;
   const t = r.tasks[i];
   const leftover = claimOf(t);
   t.status = 'done';
   t.doneLeftoverMs = leftover;
-  give(r, leftover);
+  // Freed fixed time first pays any shortfall caused by protected durations.
+  const slack = r.deadlineMs - nowMs - sum(r.tasks.filter((task) => task.status === 'pending').map(claimOf)) - r.bufferMs;
+  give(r, Math.min(leftover, Math.max(0, slack)));
   activate(r, nowMs, previous);
   return r;
 }
@@ -173,7 +188,7 @@ export function completeTask(run, id, nowMs) {
 // Swipe right on a pending task: it swaps places with the following pending task and keeps
 // its remaining time. On the last pending task nothing changes (returns the same run).
 export function postponeTask(run, id, nowMs) {
-  const pending = pendingIndexes(run);
+  const pending = pendingIndexes(run).filter((i) => taskType(run.tasks[i]) !== 'buffer');
   const k = pending.findIndex((i) => run.tasks[i].id === id);
   if (k < 0 || k === pending.length - 1) return run;
   const r = commit(clone(run), nowMs);
@@ -200,13 +215,19 @@ export function reactivateTask(run, id, nowMs) {
   t.doneLeftoverMs = 0;
   // Its claim is still budget − consumed, i.e. what it had left when it was completed.
   const missing = take(r, claimOf(t), [at]);
-  t.budgetMs -= Math.min(missing, claimOf(t));
+  if (taskType(t) !== 'fixed') t.budgetMs -= Math.min(missing, claimOf(t));
+  if (taskType(t) === 'buffer' && r.bufferMs > 0) {
+    addBudget(t, r.bufferMs);
+    r.bufferMs = 0;
+  }
   activate(r, nowMs, previous);
   return r;
 }
 
 // Swipe left on the buffer card: the buffer goes to every pending task, the current included.
 export function releaseBuffer(run, nowMs) {
+  const explicit = run.tasks.find((t) => t.status === 'pending' && taskType(t) === 'buffer');
+  if (explicit) return completeTask(run, explicit.id, nowMs);
   if (run.bufferMs <= 0) return run;
   const r = commit(clone(run), nowMs);
   const amount = r.bufferMs;
@@ -224,6 +245,7 @@ export function addTimeToCurrent(run, nowMs, ms = FIVE_MIN_MS) {
   const i = currentIndex(r);
   if (i < 0) return run;
   addBudget(r.tasks[i], ms);
+  if (taskType(r.tasks[i]) === 'fixed') r.tasks[i].estimateMs = r.tasks[i].budgetMs;
   take(r, ms, [i]);
   return r;
 }
@@ -248,67 +270,55 @@ export function applyEdit(run, edit, nowMs) {
   const previous = currentTask(r);
   const done = r.tasks.filter((t) => t.status === 'done');
   const oldPending = r.tasks.filter((t) => t.status === 'pending');
-  const byId = new Map(oldPending.map((t) => [t.id, t]));
-  const oldEstimate = new Map(oldPending.map((t) => [t.id, t.estimateMs]));
+  const old = new Map(oldPending.map((t) => [t.id, { ...t }]));
+  const total = Math.min(sum(oldPending.map(claimOf)) + r.bufferMs, Math.max(0, r.deadlineMs - nowMs));
   const used = new Set();
-  const nextPending = (edit.tasks || []).map((e) => {
+  const entries = normalizeTaskTypes(edit.tasks || [], done.some((t) => taskType(t) === 'buffer'));
+  const nextPending = entries.map((e) => {
     const estimateMs = Math.max(MIN_MS, Math.round(e.estimateMs));
-    const existing = e.id && byId.get(e.id);
+    const existing = oldPending.find((t) => t.id === e.id);
     if (existing && !used.has(e.id)) {
       used.add(e.id);
       existing.name = e.name;
       existing.estimateMs = estimateMs;
+      delete existing.type;
+      Object.assign(existing, typeProps(e));
       return existing;
     }
-    return newTask(r, { name: e.name, estimateMs });
+    return newTask(r, { ...e, estimateMs });
   });
-  const removed = oldPending.filter((t) => !used.has(t.id));
-  const keepCurrent = previous && nextPending[0] && nextPending[0].id === previous.id;
-  const sameSet = !removed.length && nextPending.every((t) => oldEstimate.has(t.id));
-  const sameEstimates = sameSet && nextPending.every((t) => oldEstimate.get(t.id) === t.estimateMs);
-
+  const nextCurrent = nextPending.find((t) => taskType(t) !== 'buffer');
+  const keepCurrent = previous && nextCurrent?.id === previous.id;
+  const unchanged = used.size === oldPending.length && nextPending.length === oldPending.length &&
+    nextPending.every((t) => old.get(t.id)?.estimateMs === t.estimateMs && taskType(old.get(t.id)) === taskType(t));
   r.tasks = [...done, ...nextPending];
 
-  // Only reordering (same tasks, same estimates) moves no time, like a postponement.
-  if (!sameEstimates) {
-    const poolMembers = keepCurrent ? nextPending.slice(1) : nextPending;
-    const oldPoolMembers = oldPending.filter((t) => !(keepCurrent && t.id === previous.id));
-    let pool = sum(oldPoolMembers.map(claimOf));
-    const oldNeed = sum(oldPoolMembers.map((t) => Math.max(0, oldEstimate.get(t.id) - t.consumedMs)));
-
-    if (keepCurrent) {
-      const cur = nextPending[0];
-      const delta = cur.estimateMs - oldEstimate.get(cur.id);
-      if (delta > 0) {
-        addBudget(cur, delta);
-        const fromBuffer = Math.min(r.bufferMs, delta);
-        r.bufferMs -= fromBuffer;
-        pool -= Math.min(pool, delta - fromBuffer);
-      } else if (delta < 0) {
-        // Never below what was already consumed: reducing the estimate does not erase time.
-        const freed = Math.min(-delta, claimOf(cur));
-        cur.budgetMs -= freed;
-        pool += freed;
+  if (!unchanged) {
+    nextPending.forEach((t) => {
+      const before = old.get(t.id);
+      if (taskType(t) === 'fixed') {
+        t.budgetMs = t.estimateMs;
+      } else if (keepCurrent && t.id === previous.id && before) {
+        const delta = t.estimateMs - before.estimateMs;
+        if (delta > 0) addBudget(t, delta);
+        else t.budgetMs -= Math.min(-delta, claimOf(t));
+      } else if (taskType(t) === 'buffer' && before && taskType(before) === 'buffer') {
+        t.budgetMs = t.consumedMs + Math.max(0, claimOf(before) + t.estimateMs - before.estimateMs);
+      } else {
+        t.budgetMs = referenceOf(t) > 0 ? t.estimateMs : (before?.budgetMs ?? t.consumedMs);
       }
+      t.absorbedMs = overrunOf(t);
+    });
+    // An explicit buffer and automatically generated slack are the same reserve.
+    const explicitBuffer = nextPending.find((t) => taskType(t) === 'buffer');
+    if (explicitBuffer && r.bufferMs > 0) {
+      addBudget(explicitBuffer, r.bufferMs);
+      r.bufferMs = 0;
     }
-
-    const need = sum(poolMembers.map(referenceOf));
-    const extraNeed = need - oldNeed;
-    if (extraNeed > 0) {
-      // The buffer always covers an increase first.
-      const fromBuffer = Math.min(r.bufferMs, extraNeed);
-      r.bufferMs -= fromBuffer;
-      pool += fromBuffer;
-    }
-    const weights = poolMembers.map(referenceOf);
-    if (sum(weights) <= 0) r.bufferMs += pool;
-    else {
-      const parts = splitProportional(pool, weights);
-      poolMembers.forEach((t, k) => {
-        if (parts[k] > 0) { t.budgetMs = t.consumedMs + parts[k]; t.absorbedMs = 0; }
-        else if (claimOf(t) > 0) t.budgetMs = t.consumedMs;
-      });
-    }
+    const slack = total - sum(nextPending.map(claimOf)) - r.bufferMs;
+    const excluded = keepCurrent ? [r.tasks.findIndex((t) => t.id === previous.id)] : [];
+    if (slack < 0) take(r, -slack, excluded);
+    else if (slack > 0) give(r, slack, excluded);
   }
   activate(r, nowMs, previous?.id);
   if (edit.deadlineMs !== undefined && edit.deadlineMs !== r.deadlineMs) {
@@ -323,6 +333,8 @@ export function applyEdit(run, edit, nowMs) {
 // Everything the screens need at nowMs, without changing the stored run.
 export function viewRun(run, nowMs) {
   const r = commit(clone(run), nowMs);
+  // A buffer is a reserve, never the active task; display it at the end of the timeline.
+  r.tasks = [...r.tasks.filter((t) => taskType(t) !== 'buffer'), ...r.tasks.filter((t) => taskType(t) === 'buffer')];
   const cur = currentIndex(r);
   const pending = r.tasks.filter((t) => t.status === 'pending');
   const untilDeadlineMs = r.deadlineMs - nowMs;
@@ -334,6 +346,7 @@ export function viewRun(run, nowMs) {
     return {
       id: t.id,
       name: t.name,
+      ...typeProps(t),
       status: t.status,
       isCurrent,
       estimateMs: t.estimateMs,
@@ -356,14 +369,16 @@ export function viewRun(run, nowMs) {
     current: cur < 0 ? null : tasks[cur],
     tasks,
     allDone: cur < 0,
-    deficitMs: Math.max(0, sum(pending.map(referenceOf)) - Math.max(0, untilDeadlineMs)),
+    deficitMs: Math.max(0, sum(pending.filter((t) => taskType(t) !== 'buffer').map(referenceOf)) - Math.max(0, untilDeadlineMs)),
+    protectedDeficitMs: pending.some((t) => taskType(t) === 'fixed')
+      ? Math.max(0, sum(pending.map(claimOf)) + r.bufferMs - Math.max(0, untilDeadlineMs)) : 0,
     expired: nowMs >= r.deadlineMs + AUTO_CLOSE_MS,
   };
 }
 
 // Tasks of a run as a plan (for "restart with a new deadline" and "update the template").
 export function runToPlanTasks(run) {
-  return run.tasks.map((t) => ({ name: t.name, minutes: Math.max(1, Math.round(t.estimateMs / MIN_MS)) }));
+  return run.tasks.map((t) => ({ name: t.name, minutes: Math.max(1, Math.round(t.estimateMs / MIN_MS)), ...typeProps(t) }));
 }
 
 // --- Planning --------------------------------------------------------------------------
@@ -377,6 +392,8 @@ export function planSummary(tasks, deadlineMs, nowMs) {
   const totalMs = totalMinutes(tasks) * MIN_MS;
   const idealStartMs = deadlineMs - totalMs;
   const availableMs = Math.max(0, deadlineMs - nowMs);
+  const fixedMs = totalMinutes(tasks.filter((t) => taskType(t) === 'fixed')) * MIN_MS;
+  const flexibleMs = totalMinutes(tasks.filter((t) => taskType(t) === 'normal')) * MIN_MS;
   return {
     totalMs,
     idealStartMs,
@@ -384,8 +401,9 @@ export function planSummary(tasks, deadlineMs, nowMs) {
     early: nowMs < idealStartMs,
     untilStartMs: idealStartMs - nowMs,
     bufferIfStartNowMs: Math.max(0, availableMs - totalMs),
-    missingMs: Math.max(0, totalMs - availableMs),
-    factor: totalMs > 0 ? Math.min(1, availableMs / totalMs) : 1,
+    missingMs: Math.max(0, fixedMs + flexibleMs - availableMs),
+    protectedDeficitMs: Math.max(0, fixedMs - availableMs),
+    factor: flexibleMs > 0 ? Math.min(1, Math.max(0, availableMs - fixedMs) / flexibleMs) : 1,
   };
 }
 

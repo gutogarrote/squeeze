@@ -33,6 +33,24 @@ Estes valores são sempre guardados separadamente e nunca confundidos:
 | **Restante** | `orçamento − consumido`. Na tarefa atual pode ficar negativo: é o excesso (`-5 min`). |
 | **Folga** | Reserva de tempo criada ao começar adiantado (ou que sobra quando não há mais tarefas). Fica no fim, logo antes do deadline. |
 
+### Tipos de tarefa
+
+No editor, cada tarefa tem seletores **Fixo** e **Folga**, mutuamente exclusivos. Sem nenhum selecionado,
+ela continua flexível, como nas rotinas existentes. Pode haver várias fixas, mas só uma folga por rotina.
+
+- **Fixo:** preserva a duração escolhida; não perde nem recebe tempo automaticamente. Só o tempo
+  efetivamente ativo reduz seu restante. Adiar, concluir, reativar e reabrir o app preservam o tempo
+  consumido. Editar a duração ou usar +5 min é uma mudança explícita dessa duração.
+- **Folga:** reserva única, consumida antes de qualquer squeeze nas tarefas flexíveis. A folga criada
+  ao começar adiantado soma-se à folga escolhida; não há dois cards de reserva. Ela aparece no fim da
+  timeline e não vira tarefa atual. Distribuir folga libera seu restante apenas para tarefas flexíveis.
+- As regras de distribuição e compressão abaixo se aplicam às tarefas **flexíveis**, excluindo as fixas
+  e usando primeiro a folga. No começo atrasado, a folga é reduzida antes das tarefas flexíveis.
+- Se as fixas não couberem no tempo disponível, suas durações são preservadas e o excesso é mostrado.
+  A igualdade de §6.1 só vale enquanto as durações protegidas couberem até o deadline. Tempo liberado
+  por uma conclusão paga esse excesso antes de ser redistribuído.
+- Os tipos são mantidos em modelos salvos, rascunhos, execução ativa, edição, recomeço e links.
+
 ## 3. Planejamento (antes de começar)
 
 O usuário pode:
@@ -324,6 +342,7 @@ Exemplo (o plano de §3):
 - `HHMM`: deadline, obrigatório, interpretado como na §3.
 - Nomes: `_` vale espaço; pontuação usa o escape `~XX` da v2; letras acentuadas e emojis podem ir
   literalmente (ou codificados em `%XX`). Emojis são só parte do nome, opcionais.
+- `tipos` é opcional: lista de `normal`, `fixo` ou `folga`, separada por vírgulas, com uma entrada por tarefa e no máximo uma folga.
 - `nome` é opcional; sem ele, a rotina se chama "Rotina fim HH:MM", usando o deadline do link (ex.: "Rotina fim 20:30").
 - Limites: até 40 tarefas, de 1 a 720 min cada, no máximo 1440 min no total.
 - Abrir um link cria uma rotina em planejamento, sem sobrescrever modelos salvos (o usuário pode salvá-la).

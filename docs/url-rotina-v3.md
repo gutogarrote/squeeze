@@ -6,7 +6,7 @@ A fonte canônica é `docs/url-rotina-v3.md`. O build gera deste mesmo texto a p
 
 ## Como construir um link
 
-Use a base `https://squeeze.ggarrote.workers.dev/` com o parâmetro `rotina` e, opcionalmente, `nome`. Preserve a ordem pedida, use durações inteiras em minutos e inclua sempre o deadline. Não invente tarefas, durações ou deadline: pergunte o que faltar.
+Use a base `https://squeeze.ggarrote.workers.dev/` com o parâmetro `rotina` e, opcionalmente, `nome` e `tipos`. Preserve a ordem pedida, use durações inteiras em minutos e inclua sempre o deadline. Não invente tarefas, durações ou deadline: pergunte o que faltar.
 
 O app calcula o horário ideal de início: deadline menos a soma das durações. Ex.: tarefas de 60, 20, 25, 20 e 20 min com deadline às 15:00 começam às 12:35. O deadline vale a próxima ocorrência desse horário: se já passou hoje, é amanhã.
 
@@ -20,6 +20,16 @@ O app calcula o horário ideal de início: deadline menos a soma das durações.
 - `HHMM` é o deadline em 24 horas, com quatro dígitos: `0930`, `1500`, `0100`.
 - Cada tarefa é `Nome-minutos`, separada da seguinte por ponto. Os minutos são o que vem depois do último hífen, então `Treino-5-30` é a tarefa "Treino-5" com 30 minutos.
 - `nome` é opcional. Sem ele, a rotina se chama "Rotina fim HH:MM", usando o deadline do link (ex.: "Rotina fim 20:30").
+
+## Tipos de tarefa (opcional)
+
+O parâmetro `tipos` é uma lista separada por vírgulas, na mesma ordem das tarefas, com exatamente uma entrada por tarefa: `normal`, `fixo` ou `folga`. Exemplo de valor: `tipos=normal,fixo,folga`. Não escape as vírgulas. Sem esse parâmetro, todas as tarefas são normais.
+
+- `normal`: duração flexível, pode fazer squeeze ou crescer quando sobra tempo.
+- `fixo`: duração preservada; só consome tempo quando a tarefa está ativa. Pode haver várias.
+- `folga`: reserva que absorve os atrasos antes das tarefas normais; no máximo uma por rotina. A folga automática se soma a ela e não cria outra. A reserva não vira uma tarefa ativa e aparece no fim da timeline.
+
+Os tipos acompanham as rotinas salvas e os links copiados. Se as tarefas fixas não couberem até o deadline, o app mantém suas durações e sinaliza o tempo que falta.
 
 ## Limites
 
@@ -66,7 +76,7 @@ Espaço vira `_`. Underscore literal não é suportado. Letras, números e `-` v
 
 O app abre a rotina no planejamento, mostrando o horário ideal de início, sem alterar as rotinas salvas; o usuário pode salvá-la. Se houver uma rotina em andamento, o app pergunta antes de substituí-la. Um link inválido não altera nada: o app avisa e continua com os dados locais. Tudo fica no aparelho; não há conta, servidor ou sincronização.
 
-Não há campos para data, horário de início, andamento, tarefas concluídas, folga, ícones, cores ou configurações. Não acrescente parâmetros para tentar configurá-los.
+Não há campos para data, horário de início, andamento, tarefas concluídas, ícones, cores ou configurações. Não acrescente parâmetros para tentar configurá-los.
 
 ## Prompt pronto para qualquer agente
 
@@ -75,6 +85,7 @@ Use as instruções oficiais de links v3 do Squeeze para montar um link em https
 Minha solicitação: [nome da rotina, tarefas em ordem, minutos de cada uma e deadline].
 Pergunte o que faltar; não invente tarefas, minutos ou deadline.
 Formato: ?rotina=3.HHMM.Tarefa-min.Tarefa-min...&nome=Nome. Use _ para espaços, ~HH em maiúsculas para pontuação ASCII, nunca underscore literal nem % para ASCII. Acentos e emojis podem ir literais ou em UTF-8 percent-encoded uma vez.
+Opcional: &tipos=normal,fixo,folga com exatamente um tipo por tarefa, na mesma ordem; no máximo uma folga.
 Limites: 1 a 40 tarefas, 1 a 720 min cada, total até 1440, nomes até 80 caracteres.
 Entregue o link clicável e uma conferência com nomes, minutos, deadline e o horário ideal de início (deadline menos a soma).
 ```

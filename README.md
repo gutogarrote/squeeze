@@ -39,6 +39,12 @@ durante a rotina.
 
 Tocar num card mostra os mesmos comandos como botões.
 
+**Tipos de tarefa.** Ao criar ou editar, marque **Fixo** para preservar a duração ou **Folga**
+para reservar tempo que absorve atrasos antes das outras tarefas. Os seletores são exclusivos:
+pode haver várias fixas e uma folga por rotina. Sem seleção, a tarefa continua flexível.
+A folga automática soma-se à reserva escolhida. As fixas só gastam tempo enquanto estão ativas;
+se não couberem no deadline, o app mantém a duração e mostra o excesso.
+
 **O tempo se ajusta sozinho.**
 
 - Se a tarefa atual estoura, o excesso sai primeiro da folga e depois das próximas

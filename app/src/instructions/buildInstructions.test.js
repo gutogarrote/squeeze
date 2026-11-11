@@ -22,7 +22,7 @@ test('every documented routine link parses, uses only supported fields, and matc
   links.forEach((link, i) => {
     const url = new URL(link);
     expect(url.origin).toBe('https://squeeze.ggarrote.workers.dev');
-    expect([...url.searchParams.keys()].every(key => ['rotina', 'nome'].includes(key))).toBe(true);
+    expect([...url.searchParams.keys()].every(key => ['rotina', 'nome', 'tipos'].includes(key))).toBe(true);
     expect(url.pathname).toBe('/');
     expect(url.hash).toBe('');
     const parsed = parseRoutineLink(url.search);
