@@ -23,8 +23,9 @@ import {
   saveDraft, saveRun, saveSettings, saveTemplates, upsertTemplate,
 } from './lib/storage';
 import { primeSounds } from './lib/sound';
+import { typeProps } from './lib/taskTypes';
 
-const withIds = (tasks) => tasks.map((t) => ({ id: makeId('p'), name: t.name, minutes: t.minutes }));
+const withIds = (tasks) => tasks.map((t) => ({ id: makeId('p'), name: t.name, minutes: t.minutes, ...typeProps(t) }));
 const planFrom = ({ name, deadline, tasks }, templateId = null) => ({ name, deadline, templateId, tasks: withIds(tasks) });
 
 function readLink() {
@@ -34,6 +35,7 @@ function readLink() {
     const url = new URL(window.location.href);
     url.searchParams.delete('rotina');
     url.searchParams.delete('nome');
+    url.searchParams.delete('tipos');
     try { window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash); } catch (_) {}
   }
   return parsed;

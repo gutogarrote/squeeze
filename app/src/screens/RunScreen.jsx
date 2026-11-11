@@ -44,6 +44,7 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
       >
         <p className="text-xs font-medium uppercase tracking-widest text-lime-300/80">Agora</p>
         <h2 className="mt-1 text-2xl font-semibold leading-tight text-zinc-50">{task.name}</h2>
+        {task.type === 'fixed' && <p className="mt-1 text-xs font-medium text-sky-300">Tempo fixo · não faz squeeze</p>}
         <div className="mt-3 flex items-end justify-between gap-3">
           <p className={`${Math.abs(remaining) >= 3600000 ? 'text-5xl' : 'text-6xl'} font-semibold tabular-nums tracking-tight ${tone}`} aria-label={over ? `Excedeu ${formatCountdown(-remaining).replace('-', '')}` : `Restam ${formatCountdown(remaining)}`}>
             {formatCountdown(remaining)}
@@ -99,6 +100,7 @@ function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpon
         </div>
         <div className="mt-2 flex items-center gap-3">
           <span className="w-11 shrink-0 text-xs tabular-nums text-zinc-500">{formatClock(startMs)}</span>
+          {task.type === 'fixed' && <span className="shrink-0 text-xs text-sky-300">Fixo</span>}
           {task.referenceMs > 0
             ? <Bar value={task.remainingMs} total={Math.max(task.referenceMs, task.remainingMs)} tone={compressed ? 'bg-amber-300/80' : 'bg-zinc-400/60'} />
             : <span className="text-xs text-rose-300">{task.overrunMs > 0 ? `excedeu ${formatMinutes(task.overrunMs)}` : 'sem tempo'}</span>}
@@ -138,11 +140,11 @@ function DoneCard({ task, expanded, onToggle, onReactivate }) {
   );
 }
 
-function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease }) {
+function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease, name = 'Folga' }) {
   return (
     <div>
       <SwipeCard
-        label={freeTime ? 'Tempo livre' : 'Folga'}
+        label={freeTime ? 'Tempo livre' : name}
         onSwipeLeft={freeTime ? () => false : onRelease}
         onSwipeRight={() => false}
         leftHint={freeTime ? '' : 'Distribuir'}
@@ -151,7 +153,7 @@ function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease
         className="flex flex-col justify-center rounded-2xl border border-dashed border-lime-300/30 px-4 transition-[height] duration-500"
       >
         <div className="flex items-baseline justify-between">
-          <p className="font-medium text-lime-200">{freeTime ? 'Tempo livre' : 'Folga'}</p>
+          <p className="font-medium text-lime-200">{freeTime ? 'Tempo livre' : name}</p>
           <p className="tabular-nums text-lime-200">+{formatMinutes(bufferMs)}</p>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
@@ -179,7 +181,7 @@ export default function RunScreen({
 
   const toggle = (id) => setExpanded((e) => (e === id ? null : id));
   const act = (fn) => () => { setExpanded(null); return fn(); };
-  const pending = view.tasks.filter((t) => t.status === 'pending');
+  const pending = view.tasks.filter((t) => t.status === 'pending' && t.type !== 'buffer');
   const lastPendingId = pending[pending.length - 1]?.id;
 
   // Projected start times of the upcoming tasks (time blocking).
@@ -195,7 +197,12 @@ export default function RunScreen({
     <div className="mx-auto min-h-screen max-w-xl px-4 pb-24 pt-4">
       <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur">
         <TimelineCard startMs={view.startedAtMs} deadlineMs={view.deadlineMs} now={now} late={view.late} squeezed={view.deficitMs > 0} />
-        {view.deficitMs > 0 && !view.late && (
+        {view.protectedDeficitMs > 0 && (
+          <p role="status" className="mt-2 rounded-xl bg-rose-500/15 px-4 py-2 text-sm text-rose-200 ring-1 ring-rose-400/40">
+            O plano ultrapassa o deadline em {formatMinutes(view.protectedDeficitMs)}. A duração das tarefas fixas será preservada.
+          </p>
+        )}
+        {view.deficitMs > 0 && !view.late && !view.protectedDeficitMs && (
           <p role="status" className="mt-2 rounded-xl bg-amber-400/10 px-4 py-2 text-sm text-amber-200 ring-1 ring-amber-400/30">
             Faltam {formatMinutes(view.deficitMs)} para caber tudo: as próximas tarefas estão comprimidas.
           </p>
@@ -215,6 +222,9 @@ export default function RunScreen({
           <li key={t.id} ref={t.isCurrent ? currentRef : null}>
             {t.status === 'done' ? (
               <DoneCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)} onReactivate={act(() => onReactivate(t.id))} />
+            ) : t.type === 'buffer' ? (
+              <BufferCard name={t.name} bufferMs={Math.max(0, t.remainingMs)} startMs={t.isCurrent ? now : starts[t.id]}
+                freeTime={view.allDone} expanded={expanded === t.id} onToggle={() => toggle(t.id)} onRelease={act(() => onComplete(t.id))} />
             ) : t.isCurrent ? (
               <CurrentCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
                 canPostpone={t.id !== lastPendingId}

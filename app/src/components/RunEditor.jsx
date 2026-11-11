@@ -6,6 +6,7 @@ import FinishPreview from './FinishPreview';
 import { formatClock, nextOccurrence } from '../lib/clock';
 import { LIMITS } from '../lib/routineLink';
 import { finishFromNow } from '../lib/engine';
+import { taskType, typeProps } from '../lib/taskTypes';
 
 const MIN_MS = 60000;
 
@@ -16,7 +17,7 @@ export default function RunEditor({ view, now, onSave, onCancel }) {
   const [name, setName] = useState(view.name);
   const [items, setItems] = useState(() => view.tasks
     .filter((t) => t.status === 'pending')
-    .map((t) => ({ key: t.id, id: t.id, name: t.name, minutes: Math.max(1, Math.round(t.estimateMs / MIN_MS)) })));
+    .map((t) => ({ key: t.id, id: t.id, name: t.name, minutes: Math.max(1, Math.round(t.estimateMs / MIN_MS)), ...typeProps(t) })));
 
   // Time already spent on each pending task does not need to be done again.
   const consumed = Object.fromEntries(view.tasks.map((t) => [t.id, t.consumedMs]));
@@ -24,7 +25,7 @@ export default function RunEditor({ view, now, onSave, onCancel }) {
   const deadlineMs = clock !== initialClock ? nextOccurrence(clock, now) : view.deadlineMs;
 
   function save() {
-    const tasks = cleanItems(items).map((t) => ({ id: t.id, name: t.name, estimateMs: t.minutes * MIN_MS }));
+    const tasks = cleanItems(items).map((t) => ({ id: t.id, name: t.name, estimateMs: t.minutes * MIN_MS, ...typeProps(t) }));
     onSave({ name: name.trim() || 'Rotina', tasks, deadlineMs: clock !== initialClock ? nextOccurrence(clock, now) : undefined });
   }
 
@@ -42,9 +43,9 @@ export default function RunEditor({ view, now, onSave, onCancel }) {
           className="mt-2 block w-full rounded-xl bg-zinc-900 px-4 py-3 text-base text-zinc-100 ring-1 ring-white/10 focus:outline-none focus:ring-lime-300/60" />
       </label>
       <p className="mb-3 text-sm text-zinc-500">
-        Tarefas pendentes, na ordem. A primeira é a atual. Concluídas não aparecem aqui: reative-as na timeline.
+        Tarefas pendentes, na ordem. A primeira que não é folga é a atual. A folga fica no fim da timeline. Concluídas não aparecem aqui: reative-as na timeline.
       </p>
-      <TaskListEditor items={items} onChange={setItems} />
+      <TaskListEditor items={items} onChange={setItems} bufferReserved={view.tasks.some((t) => t.status === 'done' && taskType(t) === 'buffer')} />
       {items.length > 0 && (
         <FinishPreview label="Seguindo as estimativas a partir de agora, termina às" finishMs={finishMs}
           deadlineMs={deadlineMs} deadlineClock={clock} onUse={setClock} />

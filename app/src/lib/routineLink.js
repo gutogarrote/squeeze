@@ -3,6 +3,7 @@
 // Name grammar inherited from Ver o Tempo's v2: `_` is a space, ASCII punctuation is
 // escaped as `~XX` (uppercase hex), other Unicode (accents, emoji) may be literal or
 // percent-encoded. Literal underscores are not supported.
+import { taskType, typeProps } from './taskTypes';
 
 export const LINK_ERROR = 'Não foi possível abrir a rotina do link. Nada foi alterado.';
 export const NAME_ERROR = 'O link reserva _ para espaços. Remova underscores dos nomes.';
@@ -79,7 +80,7 @@ export function parseRoutineLink(search) {
   const params = rawParams(search);
   if (!params.rotina) return { status: 'absent' };
   try {
-    if (params.rotina.length !== 1 || (params.nome && params.nome.length !== 1)) fail('duplicate-parameter');
+    if (params.rotina.length !== 1 || (params.nome && params.nome.length !== 1) || (params.tipos && params.tipos.length !== 1)) fail('duplicate-parameter');
     const raw = params.rotina[0];
     if (raw.length > LIMITS.valueLength) fail('too-long');
     const parts = decodeValue(raw).split('.');
@@ -101,6 +102,12 @@ export function parseRoutineLink(search) {
       if (total > LIMITS.totalMinutes) fail('routine-too-long');
       return { name: decodeName(entry.slice(0, dash)), minutes };
     });
+    if (params.tipos) {
+      const types = params.tipos[0].split(',');
+      if (types.length !== tasks.length || types.some((type) => !['normal', 'fixo', 'folga'].includes(type)) ||
+        types.filter((type) => type === 'folga').length > 1) fail('invalid-task-types');
+      tasks.forEach((task, i) => Object.assign(task, typeProps({ type: { fixo: 'fixed', folga: 'buffer' }[types[i]] })));
+    }
     const deadline = `${time.slice(0, 2)}:${time.slice(2)}`;
     const name = params.nome ? decodeName(decodeValue(params.nome[0])) : `Rotina fim ${deadline}`;
     return { status: 'valid', plan: { name, deadline, tasks } };
@@ -121,9 +128,12 @@ export function serializeRoutineLink(baseUrl, plan) {
   const url = new URL(baseUrl);
   url.searchParams.delete('rotina');
   url.searchParams.delete('nome');
+  url.searchParams.delete('tipos');
   const other = url.searchParams.toString();
   const name = plan.name && validName(plan.name) ? `&nome=${encodeName(plan.name)}` : '';
-  url.search = `${other ? other + '&' : ''}rotina=3.${plan.deadline.replace(':', '')}.${entries.join('.')}${name}`;
+  const types = plan.tasks.some((t) => taskType(t) !== 'normal')
+    ? '&tipos=' + plan.tasks.map((t) => ({ normal: 'normal', fixed: 'fixo', buffer: 'folga' })[taskType(t)]).join(',') : '';
+  url.search = `${other ? other + '&' : ''}rotina=3.${plan.deadline.replace(':', '')}.${entries.join('.')}${name}${types}`;
   if (parseRoutineLink(url.search).status !== 'valid') throw new Error(LINK_ERROR);
   return url.href;
 }

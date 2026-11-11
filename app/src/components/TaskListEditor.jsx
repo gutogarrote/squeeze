@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { makeId } from '../lib/storage';
 import { LIMITS } from '../lib/routineLink';
+import { normalizeTaskTypes, taskType } from '../lib/taskTypes';
 
 const clampMinutes = (m) => Math.min(LIMITS.taskMinutes, Math.max(1, Math.round(m) || 1));
 
@@ -15,7 +16,7 @@ function IconButton({ label, onClick, disabled, children, className = '' }) {
 
 // Editable list of tasks: [{ key, id?, name, minutes }]. Used by the planner and by the
 // edit mode during a run.
-export default function TaskListEditor({ items, onChange, newMinutes = 15 }) {
+export default function TaskListEditor({ items, onChange, newMinutes = 15, bufferReserved = false }) {
   const focusKey = useRef(null);
   const listRef = useRef(null);
 
@@ -56,6 +57,21 @@ export default function TaskListEditor({ items, onChange, newMinutes = 15 }) {
                 onChange={(e) => update(t.key, { name: e.target.value })}
                 className="w-full rounded-lg bg-transparent px-2 py-2 text-base text-zinc-100 placeholder:text-zinc-600 focus:bg-white/5 focus:outline-none"
               />
+              <div className="flex gap-4 px-2 pb-2 text-sm text-zinc-400">
+                <label className="flex min-h-9 items-center gap-2">
+                  <input type="checkbox" checked={taskType(t) === 'fixed'} aria-label={`Fixo: ${label}`}
+                    className="h-4 w-4 accent-lime-300"
+                    onChange={(e) => update(t.key, { type: e.target.checked ? 'fixed' : undefined })} />
+                  Fixo
+                </label>
+                <label className="flex min-h-9 items-center gap-2">
+                  <input type="checkbox" checked={taskType(t) === 'buffer'} aria-label={`Folga: ${label}`}
+                    disabled={taskType(t) !== 'buffer' && (bufferReserved || items.some((item) => taskType(item) === 'buffer'))}
+                    className="h-4 w-4 accent-lime-300 disabled:opacity-30"
+                    onChange={(e) => update(t.key, { type: e.target.checked ? 'buffer' : undefined })} />
+                  Folga
+                </label>
+              </div>
               <div className="flex items-center gap-1">
                 <IconButton label={`Subir ${label}`} disabled={i === 0} onClick={() => move(i, -1)} className="text-sm">▲</IconButton>
                 <IconButton label={`Descer ${label}`} disabled={i === items.length - 1} onClick={() => move(i, 1)} className="text-sm">▼</IconButton>
@@ -82,6 +98,7 @@ export default function TaskListEditor({ items, onChange, newMinutes = 15 }) {
           );
         })}
       </ol>
+      <p className="mt-3 px-1 text-xs text-zinc-500">Fixo mantém a duração. Folga absorve atrasos antes das outras tarefas; só pode haver uma por rotina.</p>
       <button type="button" onClick={add} disabled={items.length >= LIMITS.tasks}
         className="mt-3 w-full rounded-xl border border-dashed border-white/15 py-3 text-sm font-medium text-zinc-400 hover:border-lime-300/50 hover:text-lime-200 disabled:opacity-40">
         + Adicionar tarefa
@@ -92,5 +109,5 @@ export default function TaskListEditor({ items, onChange, newMinutes = 15 }) {
 
 // Final, valid tasks from editor items.
 export function cleanItems(items) {
-  return items.map((t, i) => ({ ...t, name: t.name.trim() || `Tarefa ${i + 1}`, minutes: clampMinutes(Number(t.minutes)) }));
+  return normalizeTaskTypes(items.map((t, i) => ({ ...t, name: t.name.trim() || `Tarefa ${i + 1}`, minutes: clampMinutes(Number(t.minutes)) })));
 }

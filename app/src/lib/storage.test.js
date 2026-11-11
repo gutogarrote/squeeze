@@ -45,3 +45,25 @@ test('upsertTemplate inserts, then replaces by id', () => {
   saveTemplates(second.list);
   expect(loadTemplates()[0].name).toBe('Manhã cedo');
 });
+
+test('fixed and buffer types persist in templates, drafts and active runs', () => {
+  const plan = { name: 'Tipos', deadline: '09:00', tasks: [
+    { name: 'A', minutes: 20, type: 'fixed' }, { name: 'Reserva', minutes: 10, type: 'buffer' },
+  ] };
+  const saved = upsertTemplate([], plan);
+  saveTemplates(saved.list);
+  expect(loadTemplates()[0].tasks.map((t) => t.type)).toEqual(['fixed', 'buffer']);
+  localStorage.setItem(KEYS.draft, JSON.stringify(plan));
+  expect(loadDraft().tasks.map((t) => t.type)).toEqual(['fixed', 'buffer']);
+  const run = startRun({ ...plan, deadlineMs: 40 * 60000 }, 0);
+  saveRun(run);
+  expect(loadRun()).toEqual(run);
+});
+
+test('old tasks remain flexible and duplicate buffer flags do not create multiple reserves', () => {
+  const plan = normalizePlan({ name: 'X', deadline: '09:00', tasks: [
+    { name: 'A', minutes: 5 }, { name: 'B', minutes: 5, type: 'buffer' },
+    { name: 'C', minutes: 5, type: 'buffer' }, { name: 'D', minutes: 5, type: 'unknown' },
+  ] });
+  expect(plan.tasks.map((t) => t.type)).toEqual([undefined, 'buffer', undefined, undefined]);
+});

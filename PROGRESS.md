@@ -29,6 +29,22 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
 
 ## Registro
 
+### Tipos Fixo e Folga — branch feat/fixed-and-buffer-tasks
+
+- Seletores exclusivos no editor de planejamento e de execução: várias tarefas fixas e uma folga
+  por rotina. Dados anteriores continuam flexíveis, sem migração destrutiva.
+- Fixas preservam duração e só consomem tempo enquanto atuais; não recebem nem cedem tempo em
+  redistribuições. A duração pode ser alterada explicitamente, inclusive pelo botão +5 min.
+- Folga explícita é uma reserva, não uma tarefa ativa. Soma a folga automática e absorve primeiro
+  o squeeze; ao zerar, só tarefas flexíveis perdem tempo. Aparece no fim da timeline.
+- Edição, reordenação, adiamento, reativação, retomada, modelos e recomeço preservam os tipos.
+  Links v3 aceitam `tipos=normal,fixo,folga`, uma entrada por tarefa e no máximo uma folga.
+- Aviso de tempo insuficiente quando as durações protegidas impedem cumprir o deadline.
+- Verificação: lint sem avisos, 221 testes do motor e da interface, build, fluxos completos no Chromium
+  em 320/390 px (reserva primeiro, fixas preservadas, recarga, edição e atualização do modelo).
+  Sem deploy desta branch.
+
+
 ### Reordenação e nomes das rotinas — branch feat/saved-routine-order
 
 - Nova branch a partir da main atualizada (389f573), preservando as melhorias de timeline e previsão de término.

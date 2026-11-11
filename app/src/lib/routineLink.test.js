@@ -55,6 +55,17 @@ describe('parseRoutineLink', () => {
 });
 
 describe('serializeRoutineLink', () => {
+  test('fixed and buffer types survive sharing and reopening a link', () => {
+    const plan = { name: 'Tipos', deadline: '20:30', tasks: [
+      { name: 'A', minutes: 20, type: 'fixed' }, { name: 'B', minutes: 10 }, { name: 'Reserva', minutes: 5, type: 'buffer' },
+    ] };
+    const url = serializeRoutineLink('https://squeeze.example/', plan);
+    expect(url).toContain('tipos=fixo,normal,folga');
+    expect(parseRoutineLink(new URL(url).search)).toEqual({ status: 'valid', plan });
+  });
+  test.each(['folga,folga', 'fixo', 'fixo,desconhecido', 'fixo,normal&tipos=normal,normal'])('rejects invalid type lists: %s', (types) => {
+    expect(parseRoutineLink(`?rotina=3.2030.A-10.B-10&tipos=${types}`).status).toBe('invalid');
+  });
   test('round-trips names with spaces, punctuation and accents', () => {
     const plan = { name: 'Tarde de sexta', deadline: '15:00', tasks: [
       { name: 'Orçamento (cliente X).', minutes: 60 },
