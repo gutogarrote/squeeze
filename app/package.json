@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/local-notifications": "8.3.1",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },
@@ -13,7 +18,12 @@
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0 --port 3000 --strictPort",
     "deploy": "npm run build && wrangler deploy --config ../wrangler.jsonc",
-    "dev:assets": "npm run build && wrangler dev --local --config ../wrangler.jsonc"
+    "dev:assets": "npm run build && wrangler dev --local --config ../wrangler.jsonc",
+    "native:assets": "node scripts/native-assets.mjs",
+    "native:sync": "npm run build && npm run native:assets && cap sync",
+    "android:open": "npm run native:sync && cap open android",
+    "android:build": "npm run native:sync && cd android && ./gradlew assembleDebug",
+    "ios:open": "npm run native:sync && cap open ios"
   },
   "browserslist": {
     "production": [
@@ -28,6 +38,7 @@
     ]
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "autoprefixer": "10.4.21",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.17",

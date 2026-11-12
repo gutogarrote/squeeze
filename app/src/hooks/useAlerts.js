@@ -4,7 +4,7 @@ import { playSound } from '../lib/sound';
 
 // Plays the current task's alerts (specifications.md §10). `onAlert` runs whenever a sound
 // would play (even muted), so the rest screen can wake up.
-export default function useAlerts(view, { enabled, onAlert, play = playSound }) {
+export default function useAlerts(view, { enabled, onAlert, play = playSound, managed = false }) {
   const state = useRef(null);
   const first = useRef(true);
   const current = view?.current;
@@ -12,6 +12,7 @@ export default function useAlerts(view, { enabled, onAlert, play = playSound }) 
   const remaining = current ? current.remainingMs : null;
 
   useEffect(() => {
+    if (managed) return;
     if (!key) { state.current = null; return; }
     const out = nextAlert(state.current, key, remaining, { silent: first.current });
     first.current = false;
@@ -20,5 +21,5 @@ export default function useAlerts(view, { enabled, onAlert, play = playSound }) 
       if (enabled) play(out.play);
       onAlert?.(out.play);
     }
-  }, [key, remaining, enabled, onAlert, play]);
+  }, [key, remaining, enabled, onAlert, play, managed]);
 }

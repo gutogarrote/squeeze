@@ -8,7 +8,7 @@ import jestDom from 'eslint-plugin-jest-dom';
 
 export default [
   // Wrangler's local/dry-run output is generated, like the Vite build.
-  { ignores: ['build/**', 'coverage/**', 'node_modules/**', '.wrangler/**'] },
+  { ignores: ['build/**', 'coverage/**', 'node_modules/**', '.wrangler/**', 'android/**', 'ios/**'] },
   {
     files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {

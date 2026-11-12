@@ -15,12 +15,24 @@ function Toggle({ label, description, checked, onChange }) {
   );
 }
 
-export default function SettingsSheet({ settings, onChange, wakeLock, onClose }) {
+export default function SettingsSheet({ settings, onChange, wakeLock, nativeAlerts, onClose }) {
   return (
     <Sheet title="Ajustes" onClose={onClose}>
       <div className="space-y-3">
         <Toggle label="Sons" description="Toques aos 5 min, a 1 min e quando o tempo da tarefa acaba."
           checked={settings.sound} onChange={(sound) => onChange({ ...settings, sound })} />
+        {nativeAlerts && <div className="rounded-xl bg-zinc-900 p-4 text-sm text-zinc-400" role="status">
+          <p>{nativeAlerts.error || (nativeAlerts.permission === 'granted'
+            ? 'Notificações permitidas. Os alertas podem tocar com a tela bloqueada; os ajustes de som do aparelho continuam valendo.'
+            : nativeAlerts.permission === 'denied'
+              ? 'Notificações bloqueadas. Permita notificações e sons nos ajustes do aparelho para receber alertas com a tela bloqueada.'
+              : 'Permita notificações para receber alertas com a tela bloqueada.')}</p>
+          <p className="mt-2">No Android, a economia de bateria pode atrasar ou agrupar os alertas.</p>
+          {(nativeAlerts.permission !== 'granted' || nativeAlerts.error) && <button type="button"
+            className="mt-2 rounded-lg bg-white/10 px-3 py-2 text-zinc-100" onClick={nativeAlerts.requestPermission}>
+            {nativeAlerts.error ? 'Tentar novamente' : 'Verificar permissão'}
+          </button>}
+        </div>}
         <Toggle label="Manter a tela acesa" description={wakeLock.message}
           checked={wakeLock.enabled} onChange={wakeLock.toggle} />
         {wakeLock.storageFailed && <p className="text-sm text-amber-300">Não foi possível salvar esta preferência neste navegador.</p>}
@@ -36,7 +48,8 @@ export default function SettingsSheet({ settings, onChange, wakeLock, onClose })
           </select>
         </label>
         <p className="pt-2 text-xs text-zinc-600">
-          Com a tela acesa, o app continua tocando os alertas. Em telas OLED o modo descanso quase não gasta bateria.
+          {nativeAlerts ? 'Os alertas pertencem à rotina em andamento. Encerrar a rotina ou desligar os sons cancela os próximos avisos.'
+            : 'Com a tela acesa, o app continua tocando os alertas. Em telas OLED o modo descanso quase não gasta bateria.'}
           {' '}<a className="underline" href="/instrucoes">Como criar links de rotina</a>
         </p>
       </div>

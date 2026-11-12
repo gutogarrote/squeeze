@@ -10,6 +10,8 @@ import PwaUpdateNotice from './components/PwaUpdateNotice';
 import { cleanItems } from './components/TaskListEditor';
 import useNow from './hooks/useNow';
 import useAlerts from './hooks/useAlerts';
+import useNativeAlerts from './hooks/useNativeAlerts';
+import { routineBaseUrl } from './native/platform';
 import useRestMode from './hooks/useRestMode';
 import useScreenWakeLock from './hooks/useScreenWakeLock';
 import {
@@ -87,7 +89,8 @@ export default function App({ clock = Date.now }) {
   }, [expired, setRun]);
 
   const rest = useRestMode({ active: !!view && !view.allDone && !sheet, restAfterMin: settings.restAfterMin, now, clock });
-  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake });
+  const nativeAlerts = useNativeAlerts({ run, enabled: settings.sound, now, clock, onAlert: rest.wake });
+  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, managed: !!nativeAlerts });
   const wakeLock = useScreenWakeLock(!!view && sheet !== 'edit', !!view?.allDone);
 
   // Every gesture applies an engine operation; it returns false when nothing changed.
@@ -105,6 +108,7 @@ export default function App({ clock = Date.now }) {
     const plan = { ...draft, tasks };
     setDraft(plan);
     primeSounds();
+    if (settings.sound) nativeAlerts?.requestPermission();
     setRun(startRun({ name: draft.name.trim() || 'Rotina', templateId: draft.templateId, deadlineMs: nextOccurrence(draft.deadline, clock()), tasks }, clock()));
   }
 
@@ -128,7 +132,7 @@ export default function App({ clock = Date.now }) {
   async function share() {
     let url;
     try {
-      url = serializeRoutineLink(window.location.origin + '/', { name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
+      url = serializeRoutineLink(routineBaseUrl(), { name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
     } catch (error) {
       setToast(error.message);
       return;
@@ -212,8 +216,11 @@ export default function App({ clock = Date.now }) {
         <EndSheet hasTemplate={templates.some((t) => t.id === run.templateId)} onEnd={endRun} onClose={() => setSheet(null)} />
       )}
       {sheet === 'settings' && (
-        <SettingsSheet settings={settings} wakeLock={wakeLock} onClose={() => setSheet(null)}
-          onChange={(next) => { setSettings(next); saveSettings(next); }} />
+        <SettingsSheet settings={settings} wakeLock={wakeLock} nativeAlerts={nativeAlerts} onClose={() => setSheet(null)}
+          onChange={(next) => {
+            if (next.sound && !settings.sound) { primeSounds(); nativeAlerts?.requestPermission(); }
+            setSettings(next); saveSettings(next);
+          }} />
       )}
       {sheet?.share && (
         <Sheet title="Link da rotina" onClose={() => setSheet(null)}>

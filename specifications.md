@@ -231,13 +231,21 @@ Regras:
   estourada toca o toque intenso assim que volta a ser a atual.
 - Um +5 min que leva o restante de volta para cima de um limite rearma aquele toque.
 - O usuário liga e desliga os sons. Os alertas nunca mudam o estado das tarefas.
-- Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
+- Na web, os toques são sintetizados (Web Audio); o áudio é liberado no toque em "Começar".
+  Nos apps Capacitor, os mesmos tons são gerados como WAVs para notificações locais.
+  O foreground mantém Web Audio e o segundo plano recebe somente os limites futuros
+  da tarefa atual. Mudanças de tarefa, orçamento/deadline, encerramento e desativação
+  de sons cancelam/recalculam avisos; retornar ao app não repete limites já passados.
 
 Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
 
 ## 11. Tela acesa e modo descanso
 
-Navegadores suspendem o app (e o som) quando o celular bloqueia. Por isso:
+Navegadores suspendem o app (e o som) quando o celular bloqueia. A PWA usa as opções
+abaixo. Os apps Android/iPhone usam notificações locais em segundo plano, sem rede,
+respeitando permissão e ajustes de som. No Android o agendamento é inexato e pode
+atrasar/agrupar avisos, sem modo despertador ou permissão de alarme exato; detalhes
+e validação em [docs/native.md](docs/native.md).
 
 - **Manter a tela acesa** (opção já existente, `useScreenWakeLock`), ativa durante a execução.
 - **Modo descanso:** após um período sem toques (padrão 2 min; opções 2, 5 ou 10 min, ou nunca),

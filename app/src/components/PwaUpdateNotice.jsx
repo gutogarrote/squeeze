@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { registerPwa } from '../pwa/registerPwa';
+import { isNative } from '../native/platform';
 
 const reloadPage = () => window.location.reload();
 function reloadSafely(reload, onError) {
@@ -18,7 +19,7 @@ export default function PwaUpdateNotice({ editing, reload = reloadPage, inline =
   const requested = useRef(false);
 
   useEffect(() => registerPwa({
-    enabled: import.meta.env.PROD,
+    enabled: import.meta.env.PROD && !isNative,
     onUpdate: worker => { setWaiting(worker); setError(''); setDismissed(false); },
     onActivated: () => {
       // Initial activation and updates accepted in another tab never reload us.

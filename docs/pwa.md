@@ -33,6 +33,11 @@ Web Audio, sem arquivos de som. Os alertas tocam enquanto a página está aberta
 com a tela bloqueada o navegador suspende o app, por isso existe a opção de manter a tela
 acesa e o modo descanso (specifications.md §11).
 
+Os [apps Capacitor para Android/iPhone](native.md) oferecem notificações locais
+com som em segundo plano e offline. Instalar a **PWA** na tela inicial não habilita
+esses recursos nativos. Os apps nativos não registram este service worker e têm
+armazenamento separado.
+
 Os dados ficam em `localStorage` por origem, nas chaves `squeeze:draft`, `squeeze:templates`,
 `squeeze:run`, `squeeze:settings` e `squeeze:keep-screen-on`. Localhost, workers.dev e outros
 domínios não compartilham dados. Uma instalação pode ter um contexto de armazenamento

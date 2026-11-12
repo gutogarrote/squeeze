@@ -22,6 +22,12 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
   `TaskListEditor`, `RunEditor`, `EndSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
 - `hooks/`: `useNow` (relógio de 1 s), `useAlerts`, `useRestMode`, `useScreenWakeLock`.
 - `pwa/` e `instructions/`: service worker gerado no build e página `/instrucoes` a partir do doc v3.
+- `native/backgroundAlerts.js`: limites futuros da tarefa atual e controlador de alertas
+  nativos, com cancelamento/reagendamento serializado e referência silenciosa ao retomar.
+  `hooks/useNativeAlerts.js` conecta ciclo de vida e permissão; `useAlerts` continua responsável
+  pelo browser. `lib/alertTones.mjs` é a fonte comum dos tons web e WAVs nativos.
+- `app/android/` e `app/ios/`: projetos Capacitor 8; `npm run native:sync` gera build e
+  sons e sincroniza os dois projetos. Sem alarme exato nem backend. [Guia nativo](docs/native.md).
 
 Chaves de storage: `squeeze:draft`, `squeeze:templates`, `squeeze:run`, `squeeze:settings`,
 `squeeze:keep-screen-on`. `App` aceita `clock` (padrão `Date.now`) para testes com tempo controlado.

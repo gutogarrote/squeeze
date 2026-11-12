@@ -64,6 +64,19 @@ com deadline às 15:00 e início ideal às 12:35. **Copiar link** no planejament
 da rotina aberta. As [instruções do formato v3](docs/url-rotina-v3.md) são completas e
 podem ser entregues a uma IA para montar links; o build as publica em `/instrucoes`.
 
+## Apps Android e iPhone
+
+O Squeeze também pode ser compilado como app Capacitor, mantendo a interface e o
+motor da versão web. Os apps usam notificações locais com sons próprios para os
+avisos da tarefa atual, inclusive com a tela bloqueada e sem internet. Alterar a
+tarefa, acrescentar minutos, encerrar a rotina ou desligar os sons cancela/recalcula
+os avisos. O Android pode atrasar ou agrupar essas notificações; não há modo de
+despertador nem permissão de alarme exato. Os ajustes de som do aparelho prevalecem.
+
+Instalação pessoal, compilação, assinatura, permissões e roteiro de teste em aparelhos:
+[docs/native.md](docs/native.md). A PWA continua disponível, com sua limitação de som
+em segundo plano. Os dados do app nativo são separados dos dados do navegador/PWA.
+
 ## Privacidade
 
 Tudo fica no navegador (`localStorage`). Não há conta, servidor, sincronização ou telemetria.

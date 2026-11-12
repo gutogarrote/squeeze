@@ -1,16 +1,9 @@
 // Alert tones, synthesized with Web Audio (no audio files needed). Browsers only allow
 // sound after a user gesture, so primeSounds() runs on the "Começar" tap.
+import { TONES } from './alertTones.mjs';
 import { LEVEL } from './alerts';
 
-// [frequency Hz, start s, duration s, gain, wave]
-const TONES = {
-  [LEVEL.five]: [[660, 0, 0.35, 0.18, 'sine']],
-  [LEVEL.one]: [[880, 0, 0.18, 0.25, 'triangle'], [880, 0.28, 0.18, 0.25, 'triangle']],
-  [LEVEL.zero]: [
-    [988, 0, 0.16, 0.35, 'square'], [784, 0.2, 0.16, 0.35, 'square'],
-    [988, 0.4, 0.16, 0.35, 'square'], [784, 0.6, 0.3, 0.35, 'square'],
-  ],
-};
+const LEVEL_TONES = { [LEVEL.five]: TONES.five, [LEVEL.one]: TONES.one, [LEVEL.zero]: TONES.zero };
 
 let context = null;
 
@@ -29,7 +22,7 @@ export function primeSounds() {
 
 export function playSound(level) {
   const ctx = audioContext();
-  const tones = TONES[level];
+  const tones = LEVEL_TONES[level];
   if (!ctx || !tones) return;
   try {
     ctx.resume?.()?.catch?.(() => {});
