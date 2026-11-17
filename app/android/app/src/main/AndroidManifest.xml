@@ -22,6 +22,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Routine links (docs/android.md). Only the root path: /instrucoes stays in the browser.
+                 Verified against https://squeeze.ggarrote.workers.dev/.well-known/assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="squeeze.ggarrote.workers.dev" android:path="/" />
+            </intent-filter>
+
         </activity>
 
         <receiver

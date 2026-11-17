@@ -1,6 +1,8 @@
 package app.squeeze.android;
 
 import android.Manifest;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.view.WindowManager;
 import com.getcapacitor.JSArray;
@@ -20,7 +22,8 @@ import org.json.JSONObject;
  * Bridge used by the web app (lib/native.js):
  * - sync({ alerts }): replaces the exact alarms for the current task's alerts;
  * - play({ alert }): plays one alert now, unless its alarm already did;
- * - keepScreenOn({ on }); requestNotifications().
+ * - keepScreenOn({ on }); requestNotifications();
+ * - event "routineLink" { url }: a routine link opened the app (App Links).
  */
 @CapacitorPlugin(
     name = "SqueezeAlerts",
@@ -29,10 +32,30 @@ import org.json.JSONObject;
 public class SqueezeAlertsPlugin extends Plugin {
 
     private static volatile boolean foreground = false;
+    private static volatile boolean skipIntent = false;
     private final ExecutorService player = Executors.newSingleThreadExecutor();
 
     static boolean isInForeground() {
         return foreground;
+    }
+
+    static void skipNextIntent(boolean skip) {
+        skipIntent = skip;
+    }
+
+    // Called for the launch intent and for links opened while the app is running. The event is
+    // retained until the web app listens, so a cold start does not lose the link.
+    @Override
+    protected void handleOnNewIntent(Intent intent) {
+        super.handleOnNewIntent(intent);
+        boolean skip = skipIntent;
+        skipIntent = false;
+        Uri link = intent.getData();
+        boolean fromHistory = (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0;
+        if (skip || fromHistory || link == null || !Intent.ACTION_VIEW.equals(intent.getAction())) return;
+        JSObject data = new JSObject();
+        data.put("url", link.toString());
+        notifyListeners("routineLink", data, true);
     }
 
     @Override

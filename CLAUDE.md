@@ -73,11 +73,13 @@ Detalhes em [docs/android.md](docs/android.md). `app/android/` empacota `app/bui
 para os alertas da tarefa atual, que tocam com a tela apagada. A web continua decidindo *o que*
 tocar; o plano de horários é lógica pura em `lib/nativeAlerts.js`. Alarme e WebView usam a mesma
 chave por alerta, e só o primeiro toca. Ao mudar os tons, altere só `lib/sound.js` (a receita
-viaja no plano). Código web não deve depender do app: sem ponte, tudo se comporta como antes.
+viaja no plano). Links de rotina abrem no app por App Links: evento `routineLink` do plugin e
+`app/public/.well-known/assetlinks.json` com a impressão digital da chave de release. Código web não deve depender do app: sem ponte, tudo se comporta como antes.
 
 ```bash
 npm run android:sync   # build web + cap sync
 npm run android:apk    # APK de debug (requer JDK 21 e ANDROID_HOME)
+npm run android:release # release assinado; keystore vem de variáveis SQUEEZE_* (nunca versionar)
 ```
 
 ## Implantação: Cloudflare Workers Static Assets

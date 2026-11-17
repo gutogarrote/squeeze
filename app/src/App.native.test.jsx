@@ -18,6 +18,9 @@ const local = (h, m = 0) => new Date(2026, 10, 4, h, m).getTime();
 const MIN = 60000;
 let nowMs;
 let native;
+let openLink;
+const remove = vi.fn();
+const LINK = 'https://squeeze.ggarrote.workers.dev/?rotina=3.0900.Cafe-10.Banho-15&nome=Manha';
 const clock = () => nowMs;
 const advance = (ms) => { nowMs += ms; act(() => { vi.advanceTimersByTime(1000); }); };
 const lastSync = () => native.sync.mock.calls.at(-1)[0].alerts;
@@ -31,6 +34,7 @@ beforeEach(() => {
     sync: vi.fn(() => Promise.resolve({ scheduled: 3 })),
     play: vi.fn(() => Promise.resolve({ played: true })),
     requestNotifications: vi.fn(() => Promise.resolve({ granted: true })),
+    addListener: vi.fn((name, listener) => { openLink = (url) => act(() => listener({ url })); return Promise.resolve({ remove }); }),
   };
   vi.spyOn(sound, 'playSound');
   vi.spyOn(sound, 'primeSounds');
@@ -80,5 +84,34 @@ test('more time, the next task, muting and ending all reschedule', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Encerrar' }));
+  expect(lastSync()).toEqual([]);
+});
+
+test('a routine link that opens the app becomes the draft; other addresses are ignored', async () => {
+  const { unmount } = render(<App clock={clock} native={native} />);
+  expect(native.addListener).toHaveBeenCalledWith('routineLink', expect.any(Function));
+  openLink('https://squeeze.ggarrote.workers.dev/');
+  openLink('not a url');
+  expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Orçamento');
+  openLink(LINK);
+  expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Cafe');
+  expect(screen.getByRole('textbox', { name: 'Nome da tarefa 2' })).toHaveValue('Banho');
+  openLink('https://squeeze.ggarrote.workers.dev/?rotina=9.bad');
+  expect(screen.getByRole('status')).toBeInTheDocument();
+  await native.addListener.mock.results[0].value;
+  unmount();
+  expect(remove).toHaveBeenCalled();
+});
+
+test('a link opened during a routine asks before replacing it', () => {
+  render(<App clock={clock} native={native} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+  openLink(LINK);
+  expect(screen.getByRole('dialog', { name: 'Abrir rotina do link?' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Manter a atual' }));
+  expect(screen.getByRole('group', { name: 'Tarefa atual: Orçamento' })).toBeInTheDocument();
+  openLink(LINK);
+  fireEvent.click(screen.getByRole('button', { name: 'Substituir' }));
+  expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Cafe');
   expect(lastSync()).toEqual([]);
 });

@@ -57,6 +57,18 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-17 — Assinatura do app e links de rotina no app
+
+- Release assinado: o build lê o keystore do ambiente e o CI o recebe por secrets; o artefato
+  `squeeze-apk` instala por cima do anterior sem apagar dados. Sem secrets, o CI gera debug.
+- App Links: links de rotina abrem no app instalado (filtro verificado para a raiz do site,
+  `/.well-known/assetlinks.json`, evento `routineLink` importado por `App.jsx`).
+- Verificação: lint sem avisos, 247 testes, build web; `assembleRelease` assinado com uma chave
+  descartável (assinatura, versão e filtro conferidos no APK).
+- Impressão digital da chave de release registrada em `app/public/.well-known/assetlinks.json`.
+- **Pendente**: cadastrar os secrets de assinatura no GitHub e publicar o site (até lá os links
+  abrem no navegador); depois instalar o `squeeze-apk` do CI. Não verificado em aparelho.
+
 ### 2026-11-17 — App Android e animações de swipe
 
 - App Android com Capacitor 8 em `app/android/` (pacote `app.squeeze.android`). Os alertas da

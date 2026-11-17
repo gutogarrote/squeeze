@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.squeeze.android",
+      "sha256_cert_fingerprints": ["D0:4C:60:0F:D7:F7:66:9B:5A:BF:D3:9B:13:69:97:8A:9F:46:22:49:2D:78:20:5F:EE:3C:02:EA:FF:04:D4:94"]
+    }
+  }
+]

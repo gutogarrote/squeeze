@@ -41,9 +41,30 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: npm ci
-      - run: npm run android:apk
+      # With the signing secrets (docs/android.md) the APK is a signed release that installs over
+      # the previous one; without them (forks, missing secrets) it is a debug build.
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SQUEEZE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SQUEEZE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SQUEEZE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SQUEEZE_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          npm run android:sync
+          cd android
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            export SQUEEZE_KEYSTORE_FILE="$RUNNER_TEMP/squeeze-release.jks"
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$SQUEEZE_KEYSTORE_FILE"
+            ./gradlew assembleRelease
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/squeeze.apk"
+            rm -f "$SQUEEZE_KEYSTORE_FILE"
+          else
+            ./gradlew assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/squeeze-debug.apk"
+          fi
       - uses: actions/upload-artifact@v4
         with:
-          name: squeeze-debug-apk
-          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          name: squeeze-apk
+          path: ${{ runner.temp }}/squeeze*.apk
           if-no-files-found: error
