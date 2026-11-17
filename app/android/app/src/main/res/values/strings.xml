@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Squeeze</string>
+    <string name="title_activity_main">Squeeze</string>
+    <string name="package_name">app.squeeze.android</string>
+    <string name="custom_url_scheme">app.squeeze.android</string>
+    <string name="alerts_channel">Alertas das tarefas</string>
+</resources>

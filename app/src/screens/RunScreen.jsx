@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SwipeCard from '../components/SwipeCard';
+import useListMotion from '../hooks/useListMotion';
 import { Button } from '../components/Sheet';
 import TimelineCard from '../components/TimelineCard';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
@@ -16,7 +17,7 @@ function Bar({ value, total, tone }) {
   const pct = total > 0 ? Math.max(0, Math.min(100, (value / total) * 100)) : 0;
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-      <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+      <div className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${tone}`} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -37,10 +38,10 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
         label={`Tarefa atual: ${task.name}`}
         onSwipeLeft={onComplete}
         onSwipeRight={onPostpone}
-        leftHint="Concluir ✓"
-        rightHint={canPostpone ? 'Adiar ↓' : ''}
+        leftHint="Concluir"
+        rightHint={canPostpone ? 'Adiar' : ''}
         onTap={onToggle}
-        className={`rounded-2xl p-5 ring-1 ${ring}`}
+        className={`rounded-2xl p-5 ring-1 transition-colors duration-500 ${ring}`}
       >
         <p className="text-xs font-medium uppercase tracking-widest text-lime-300/80">Agora</p>
         <h2 className="mt-1 text-2xl font-semibold leading-tight text-zinc-50">{task.name}</h2>
@@ -84,11 +85,11 @@ function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpon
         label={`Próxima: ${task.name}`}
         onSwipeLeft={onComplete}
         onSwipeRight={onPostpone}
-        leftHint="Concluir ✓"
-        rightHint={canPostpone ? 'Adiar ↓' : ''}
+        leftHint="Concluir"
+        rightHint={canPostpone ? 'Adiar' : ''}
         onTap={onToggle}
         style={{ height: heightFor(task.remainingMs) }}
-        className="flex flex-col justify-center rounded-2xl bg-zinc-900/70 px-4 py-2 ring-1 ring-white/5 transition-[height] duration-500"
+        className="flex flex-col justify-center rounded-2xl bg-zinc-900/70 px-4 py-2 ring-1 ring-white/5"
       >
         <div className="flex items-baseline justify-between gap-3">
           <p className="min-w-0 truncate text-base font-medium text-zinc-100">{task.name}</p>
@@ -123,13 +124,14 @@ function DoneCard({ task, expanded, onToggle, onReactivate }) {
         label={`Concluída: ${task.name}`}
         onSwipeLeft={() => false}
         onSwipeRight={onReactivate}
-        rightHint="Reativar ↺"
+        rightHint="Reativar"
+        rightIcon="↺"
         onTap={onToggle}
         style={{ height: MIN_H }}
         className="flex items-center justify-between gap-3 rounded-2xl bg-zinc-900/30 px-4 ring-1 ring-white/5"
       >
         <p className="min-w-0 truncate text-zinc-500 line-through decoration-zinc-600">
-          <span aria-hidden="true" className="mr-2 text-lime-300/70 no-underline">✓</span>{task.name}
+          <span aria-hidden="true" data-pop="" className="mr-2 inline-block text-lime-300/70 no-underline">✓</span>{task.name}
         </p>
         <p className="shrink-0 text-sm tabular-nums text-zinc-600">{formatMinutes(task.consumedMs)}</p>
       </SwipeCard>
@@ -148,9 +150,11 @@ function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease
         onSwipeLeft={freeTime ? () => false : onRelease}
         onSwipeRight={() => false}
         leftHint={freeTime ? '' : 'Distribuir'}
+        leftIcon="⇣"
+        leftTone="lime"
         onTap={onToggle}
         style={{ height: heightFor(bufferMs) }}
-        className="flex flex-col justify-center rounded-2xl border border-dashed border-lime-300/30 px-4 transition-[height] duration-500"
+        className="flex flex-col justify-center rounded-2xl border border-dashed border-lime-300/30 px-4"
       >
         <div className="flex items-baseline justify-between">
           <p className="font-medium text-lime-200">{freeTime ? 'Tempo livre' : name}</p>
@@ -180,7 +184,18 @@ export default function RunScreen({
   }, [currentId]);
 
   const toggle = (id) => setExpanded((e) => (e === id ? null : id));
-  const act = (fn) => () => { setExpanded(null); return fn(); };
+  const motion = useListMotion();
+  // Runs one operation and animates the list across it: `fly` sends the card away (done,
+  // distributed), `lift` carries it to its new place (postponed, reactivated).
+  const act = (fn, id, effect) => () => {
+    setExpanded(null);
+    motion.snapshot(id, effect);
+    const changed = fn();
+    if (!changed) motion.cancel();
+    return changed;
+  };
+  const complete = (id) => act(() => onComplete(id), id, 'fly');
+  const postpone = (id) => act(() => onPostpone(id), id, 'lift');
   const pending = view.tasks.filter((t) => t.status === 'pending' && t.type !== 'buffer');
   const lastPendingId = pending[pending.length - 1]?.id;
 
@@ -194,7 +209,7 @@ export default function RunScreen({
   });
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-4 pb-24 pt-4">
+    <div className="mx-auto min-h-screen max-w-xl animate-rise px-4 pb-24 pt-4">
       <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur">
         <TimelineCard startMs={view.startedAtMs} deadlineMs={view.deadlineMs} now={now} late={view.late} squeezed={view.deficitMs > 0} />
         {view.protectedDeficitMs > 0 && (
@@ -210,39 +225,42 @@ export default function RunScreen({
       </header>
 
       {view.allDone && (
-        <section className="mt-4 rounded-2xl bg-lime-300/10 p-5 ring-1 ring-lime-300/30">
+        <section className="mt-4 animate-pop-in rounded-2xl bg-lime-300/10 p-5 ring-1 ring-lime-300/30">
           <p className="text-xl font-semibold text-lime-200">Tudo feito!</p>
           <p className="mt-1 text-zinc-300">Deslize uma tarefa concluída para a direita para reativá-la, inclua tarefas em Editar ou encerre a rotina.</p>
           <Button variant="primary" className="mt-3" onClick={onEnd}>Encerrar rotina</Button>
         </section>
       )}
 
-      <ol className="mt-4 space-y-2" aria-label="Tarefas">
-        {view.tasks.map((t) => (
-          <li key={t.id} ref={t.isCurrent ? currentRef : null}>
-            {t.status === 'done' ? (
-              <DoneCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)} onReactivate={act(() => onReactivate(t.id))} />
-            ) : t.type === 'buffer' ? (
-              <BufferCard name={t.name} bufferMs={Math.max(0, t.remainingMs)} startMs={t.isCurrent ? now : starts[t.id]}
-                freeTime={view.allDone} expanded={expanded === t.id} onToggle={() => toggle(t.id)} onRelease={act(() => onComplete(t.id))} />
-            ) : t.isCurrent ? (
-              <CurrentCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
-                canPostpone={t.id !== lastPendingId}
-                onAddFive={onAddFive} onComplete={act(() => onComplete(t.id))} onPostpone={act(() => onPostpone(t.id))} />
-            ) : (
-              <UpcomingCard task={t} startMs={starts[t.id]} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
-                canPostpone={t.id !== lastPendingId}
-                onComplete={act(() => onComplete(t.id))} onPostpone={act(() => onPostpone(t.id))} />
-            )}
-          </li>
-        ))}
-        {view.bufferMs > 0 && (
-          <li>
-            <BufferCard bufferMs={view.bufferMs} startMs={cursor} freeTime={view.allDone} expanded={expanded === 'buffer'}
-              onToggle={() => toggle('buffer')} onRelease={act(onReleaseBuffer)} />
-          </li>
-        )}
-      </ol>
+      <div ref={motion.container} className="relative mt-4">
+        <ol className="space-y-2" aria-label="Tarefas">
+          {view.tasks.map((t) => (
+            <li key={t.id} data-motion-id={t.id} ref={t.isCurrent ? currentRef : null} className="relative">
+              {t.status === 'done' ? (
+                <DoneCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
+                  onReactivate={act(() => onReactivate(t.id), t.id, 'lift')} />
+              ) : t.type === 'buffer' ? (
+                <BufferCard name={t.name} bufferMs={Math.max(0, t.remainingMs)} startMs={t.isCurrent ? now : starts[t.id]}
+                  freeTime={view.allDone} expanded={expanded === t.id} onToggle={() => toggle(t.id)} onRelease={complete(t.id)} />
+              ) : t.isCurrent ? (
+                <CurrentCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
+                  canPostpone={t.id !== lastPendingId}
+                  onAddFive={onAddFive} onComplete={complete(t.id)} onPostpone={postpone(t.id)} />
+              ) : (
+                <UpcomingCard task={t} startMs={starts[t.id]} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
+                  canPostpone={t.id !== lastPendingId}
+                  onComplete={complete(t.id)} onPostpone={postpone(t.id)} />
+              )}
+            </li>
+          ))}
+          {view.bufferMs > 0 && (
+            <li data-motion-id="buffer" className="relative">
+              <BufferCard bufferMs={view.bufferMs} startMs={cursor} freeTime={view.allDone} expanded={expanded === 'buffer'}
+                onToggle={() => toggle('buffer')} onRelease={act(onReleaseBuffer, 'buffer', 'fly')} />
+            </li>
+          )}
+        </ol>
+      </div>
 
       <section aria-label="Deadline da rotina"
         className={`mt-4 flex items-center justify-between gap-3 rounded-2xl px-4 py-4 ring-1 ${view.late ? 'bg-rose-600/90 ring-rose-400' : 'bg-zinc-900 ring-white/10'}`}>

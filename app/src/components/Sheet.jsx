@@ -10,9 +10,9 @@ export default function Sheet({ title, onClose, children, footer, wide = false }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
-      <div aria-hidden="true" onClick={onClose} className="absolute inset-0 bg-black/70" />
+      <div aria-hidden="true" onClick={onClose} className="absolute inset-0 animate-fade-in bg-black/70" />
       <section role="dialog" aria-modal="true" aria-label={title}
-        className={`relative flex max-h-[92vh] w-full flex-col rounded-t-3xl bg-zinc-950 ring-1 ring-white/10 sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}>
+        className={`relative flex max-h-[92vh] w-full animate-sheet-in flex-col rounded-t-3xl bg-zinc-950 ring-1 ring-white/10 sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}>
         <header className="flex items-center justify-between px-5 pb-2 pt-5">
           <h2 className="text-lg font-semibold text-zinc-100">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Fechar" className="grid h-9 w-9 place-items-center rounded-full text-xl text-zinc-400 hover:bg-white/10">×</button>
@@ -31,5 +31,5 @@ export function Button({ variant = 'secondary', className = '', ...props }) {
     danger: 'bg-rose-500/90 text-white hover:bg-rose-500',
     ghost: 'text-zinc-300 hover:bg-white/10',
   };
-  return <button type="button" className={`rounded-xl px-4 py-3 text-sm font-semibold transition disabled:opacity-40 ${styles[variant]} ${className}`} {...props} />;
+  return <button type="button" className={`rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[.97] disabled:opacity-40 ${styles[variant]} ${className}`} {...props} />;
 }

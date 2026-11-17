@@ -21,10 +21,14 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
 - `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
   `TaskListEditor`, `RunEditor`, `EndSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
 - `hooks/`: `useNow` (relógio de 1 s), `useAlerts`, `useRestMode`, `useScreenWakeLock`.
+- `hooks/useListMotion` anima a lista da execução (FLIP): o card concluído sai voando, o adiado
+  viaja até o novo lugar; `SwipeCard` cuida do arrasto (painel de ação, resistência, flick, háptico).
+- `lib/native.js`, `lib/nativeAlerts.js`, `hooks/useNativeAlerts`: ponte com o app Android (abaixo).
 - `pwa/` e `instructions/`: service worker gerado no build e página `/instrucoes` a partir do doc v3.
 
 Chaves de storage: `squeeze:draft`, `squeeze:templates`, `squeeze:run`, `squeeze:settings`,
-`squeeze:keep-screen-on`. `App` aceita `clock` (padrão `Date.now`) para testes com tempo controlado.
+`squeeze:keep-screen-on`. `App` aceita `clock` (padrão `Date.now`) para testes com tempo controlado
+e `native` (ponte do app Android; `null` na web).
 
 ## Regras do motor de tempo
 
@@ -61,6 +65,20 @@ npm audit
 - Exceções de lint para acesso ao DOM são por linha e justificadas; não desligue regras globalmente.
   Não use `npm audit fix --force`; avisos de audit em ferramentas de dev são dívida conhecida.
 - CI (`.github/workflows/ci.yml`) roda `npm ci`, lint sem avisos, testes e build. Não publica.
+
+## App Android (Capacitor)
+
+Detalhes em [docs/android.md](docs/android.md). `app/android/` empacota `app/build`; o plugin
+`SqueezeAlerts` (Java, em `android/app/src/main/java/app/squeeze/android/`) agenda alarmes exatos
+para os alertas da tarefa atual, que tocam com a tela apagada. A web continua decidindo *o que*
+tocar; o plano de horários é lógica pura em `lib/nativeAlerts.js`. Alarme e WebView usam a mesma
+chave por alerta, e só o primeiro toca. Ao mudar os tons, altere só `lib/sound.js` (a receita
+viaja no plano). Código web não deve depender do app: sem ponte, tudo se comporta como antes.
+
+```bash
+npm run android:sync   # build web + cap sync
+npm run android:apk    # APK de debug (requer JDK 21 e ANDROID_HOME)
+```
 
 ## Implantação: Cloudflare Workers Static Assets
 

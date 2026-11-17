@@ -10,6 +10,7 @@ import PwaUpdateNotice from './components/PwaUpdateNotice';
 import { cleanItems } from './components/TaskListEditor';
 import useNow from './hooks/useNow';
 import useAlerts from './hooks/useAlerts';
+import useNativeAlerts from './hooks/useNativeAlerts';
 import useRestMode from './hooks/useRestMode';
 import useScreenWakeLock from './hooks/useScreenWakeLock';
 import {
@@ -23,6 +24,7 @@ import {
   saveDraft, saveRun, saveSettings, saveTemplates, upsertTemplate,
 } from './lib/storage';
 import { primeSounds } from './lib/sound';
+import { nativeAlerts, shareOrigin } from './lib/native';
 import { typeProps } from './lib/taskTypes';
 
 const withIds = (tasks) => tasks.map((t) => ({ id: makeId('p'), name: t.name, minutes: t.minutes, ...typeProps(t) }));
@@ -41,7 +43,7 @@ function readLink() {
   return parsed;
 }
 
-export default function App({ clock = Date.now }) {
+export default function App({ clock = Date.now, native = nativeAlerts() }) {
   const now = useNow(clock);
   const [link] = useState(readLink);
   const [settings, setSettings] = useState(loadSettings);
@@ -89,7 +91,9 @@ export default function App({ clock = Date.now }) {
   }, [expired, setRun]);
 
   const rest = useRestMode({ active: !!view && !view.allDone && !sheet, restAfterMin: settings.restAfterMin, now, clock });
-  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake });
+  // In the Android app the system plays the alerts (they must sound with the screen off).
+  const playNative = useNativeAlerts(view, now, { enabled: settings.sound, bridge: native });
+  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, play: playNative });
   const wakeLock = useScreenWakeLock(!!view && sheet !== 'edit', !!view?.allDone);
 
   // Every gesture applies an engine operation; it returns false when nothing changed.
@@ -106,7 +110,8 @@ export default function App({ clock = Date.now }) {
     const tasks = cleanItems(draft.tasks);
     const plan = { ...draft, tasks };
     setDraft(plan);
-    primeSounds();
+    if (native) Promise.resolve(native.requestNotifications()).catch(() => {});
+    else primeSounds();
     setRun(startRun({ name: draft.name.trim() || 'Rotina', templateId: draft.templateId, deadlineMs: nextOccurrence(draft.deadline, clock()), tasks }, clock()));
   }
 
@@ -149,7 +154,7 @@ export default function App({ clock = Date.now }) {
   async function share() {
     let url;
     try {
-      url = serializeRoutineLink(window.location.origin + '/', { name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
+      url = serializeRoutineLink(shareOrigin(), { name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
     } catch (error) {
       setToast(error.message);
       return;
@@ -235,7 +240,7 @@ export default function App({ clock = Date.now }) {
         <EndSheet hasTemplate={templates.some((t) => t.id === run.templateId)} onEnd={endRun} onClose={() => setSheet(null)} />
       )}
       {sheet === 'settings' && (
-        <SettingsSheet settings={settings} wakeLock={wakeLock} onClose={() => setSheet(null)}
+        <SettingsSheet settings={settings} wakeLock={wakeLock} native={!!native} onClose={() => setSheet(null)}
           onChange={(next) => { setSettings(next); saveSettings(next); }} />
       )}
       {sheet?.share && (
@@ -261,11 +266,11 @@ export default function App({ clock = Date.now }) {
 
       {view && rest.resting && <RestScreen view={view} now={now} onWake={rest.wake} />}
       {toast && (
-        <p role="status" className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-xl bg-zinc-800 px-4 py-3 text-center text-sm text-zinc-100 shadow-xl ring-1 ring-white/10">
+        <p role="status" className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md animate-pop-in rounded-xl bg-zinc-800 px-4 py-3 text-center text-sm text-zinc-100 shadow-xl ring-1 ring-white/10">
           {toast}
         </p>
       )}
-      <PwaUpdateNotice editing={sheet === 'edit'} />
+      {!native && <PwaUpdateNotice editing={sheet === 'edit'} />}
     </div>
   );
 }

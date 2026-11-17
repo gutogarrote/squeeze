@@ -3,7 +3,7 @@
 import { LEVEL } from './alerts';
 
 // [frequency Hz, start s, duration s, gain, wave]
-const TONES = {
+export const TONES = {
   [LEVEL.five]: [[740, 0, 0.3, 0.3, 'triangle'], [988, 0.42, 0.4, 0.3, 'triangle']],
   [LEVEL.one]: [
     [880, 0, 0.26, 0.36, 'square'], [1046, 0.4, 0.26, 0.36, 'square'],

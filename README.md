@@ -101,7 +101,7 @@ npm run build
 `npm start` abre o servidor de desenvolvimento em `http://localhost:3000`.
 O CI roda lint, testes e build. O guia técnico está em [CLAUDE.md](CLAUDE.md) e as
 convenções em [AGENTS.md](AGENTS.md). Instalação como app, offline e atualização:
-[docs/pwa.md](docs/pwa.md). Manutenção de dependências: [docs/dependency-maintenance.md](docs/dependency-maintenance.md).
+[docs/pwa.md](docs/pwa.md). Manutenção de dependências: [docs/dependency-maintenance.md](docs/dependency-maintenance.md). App Android (alertas com a tela apagada): [docs/android.md](docs/android.md).
 
 ## Implantação
 
