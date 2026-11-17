@@ -24,3 +24,26 @@ jobs:
       - run: npm run lint -- --max-warnings=0
       - run: npm test -- --run
       - run: CI=true npm run build
+  android:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run android:apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: squeeze-debug-apk
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

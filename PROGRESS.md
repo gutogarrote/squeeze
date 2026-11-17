@@ -57,6 +57,28 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-17 — App Android e animações de swipe
+
+- App Android com Capacitor 8 em `app/android/` (pacote `app.squeeze.android`). Os alertas da
+  tarefa atual viram alarmes exatos do sistema e tocam com a tela apagada, em Doze ou com o app
+  fechado, no volume de alarme; notificação silenciosa quando o app não está em primeiro plano.
+  Uma chave por alerta impede toque duplicado entre alarme e WebView. Ver `docs/android.md`.
+- No app: "Manter a tela acesa" pela flag nativa, sem service worker, links com o endereço público,
+  ícone e splash próprios.
+- Swipe: painel de ação que cresce atrás do card e fica sólido (com tique háptico) quando soltar
+  vai agir; flick rápido também age; lado sem ação oferece resistência; volta com mola.
+- Lista animada (FLIP): o card concluído sai voando para a esquerda e o item concluído surge com
+  o ✓ pulsando; o adiado/reativado viaja até o novo lugar; os demais deslizam. Respeita
+  `prefers-reduced-motion`.
+- Entradas suaves para telas, janelas e avisos; barras de progresso contínuas; botões com retorno
+  ao toque.
+- CI: job `android` gera o APK de debug como artefato.
+- Verificação: lint sem avisos, 245 testes, build web e `assembleDebug`; swipes conferidos em
+  Chromium com emulação de Pixel 7 (quadros durante o arrasto e as animações).
+- **Não verificado**: execução em aparelho ou emulador Android (indisponível no ambiente). Próximo
+  passo: seguir a lista "Verificação manual no aparelho" de `docs/android.md`; depois, assinatura
+  de release e abertura de links de rotina direto no app.
+
 ### 2026-11-08 — Término se começar agora
 
 - No planejamento e na edição durante a rotina, acima do deadline: "Começando agora, termina às HH:MM",

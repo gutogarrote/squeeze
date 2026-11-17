@@ -1,6 +1,7 @@
 import React from 'react';
 import Sheet from './Sheet';
 import { REST_OPTIONS } from '../lib/storage';
+import { PUBLIC_URL } from '../lib/native';
 
 function Toggle({ label, description, checked, onChange }) {
   return (
@@ -15,11 +16,13 @@ function Toggle({ label, description, checked, onChange }) {
   );
 }
 
-export default function SettingsSheet({ settings, onChange, wakeLock, onClose }) {
+export default function SettingsSheet({ settings, onChange, wakeLock, onClose, native = false }) {
   return (
     <Sheet title="Ajustes" onClose={onClose}>
       <div className="space-y-3">
-        <Toggle label="Sons" description="Toques aos 5 min, a 1 min e quando o tempo da tarefa acaba."
+        <Toggle label="Sons" description={native
+          ? 'Toques aos 5 min, a 1 min e quando o tempo da tarefa acaba, mesmo com a tela apagada. Usam o volume de alarme.'
+          : 'Toques aos 5 min, a 1 min e quando o tempo da tarefa acaba.'}
           checked={settings.sound} onChange={(sound) => onChange({ ...settings, sound })} />
         <Toggle label="Manter a tela acesa" description={wakeLock.message}
           checked={wakeLock.enabled} onChange={wakeLock.toggle} />
@@ -36,8 +39,8 @@ export default function SettingsSheet({ settings, onChange, wakeLock, onClose })
           </select>
         </label>
         <p className="pt-2 text-xs text-zinc-600">
-          Com a tela acesa, o app continua tocando os alertas. Em telas OLED o modo descanso quase não gasta bateria.
-          {' '}<a className="underline" href="/instrucoes">Como criar links de rotina</a>
+          {native ? 'Os alertas tocam com a tela apagada ou acesa.' : 'Com a tela acesa, o app continua tocando os alertas.'} Em telas OLED o modo descanso quase não gasta bateria.
+          {' '}<a className="underline" href={native ? `${PUBLIC_URL}instrucoes` : '/instrucoes'}>Como criar links de rotina</a>
         </p>
       </div>
     </Sheet>
