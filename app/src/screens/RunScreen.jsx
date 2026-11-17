@@ -3,8 +3,10 @@ import SwipeCard from '../components/SwipeCard';
 import useListMotion from '../hooks/useListMotion';
 import { Button } from '../components/Sheet';
 import TimelineCard from '../components/TimelineCard';
+import TimeRail, { RAIL_WIDTH } from '../components/TimeRail';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
 import { cardHeight } from '../lib/cardSize';
+import { railSpans } from '../lib/timeRail';
 
 const MIN_MS = 60000;
 const FIVE_MIN_MS = 5 * MIN_MS;
@@ -42,8 +44,8 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
         <p className="text-xs font-medium uppercase tracking-widest text-lime-300/80">Agora</p>
         <h2 className="mt-1 text-2xl font-semibold leading-tight text-zinc-50">{task.name}</h2>
         {task.type === 'fixed' && <p className="mt-1 text-xs font-medium text-sky-300">Tempo fixo · não faz squeeze</p>}
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <p className={`${Math.abs(remaining) >= 3600000 ? 'text-5xl' : 'text-6xl'} font-semibold tabular-nums tracking-tight ${tone}`} aria-label={over ? `Excedeu ${formatCountdown(-remaining).replace('-', '')}` : `Restam ${formatCountdown(remaining)}`}>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-x-3">
+          <p className={`${formatCountdown(remaining).length > 5 ? 'text-5xl' : 'text-6xl'} font-semibold tabular-nums tracking-tight ${tone}`} aria-label={over ? `Excedeu ${formatCountdown(-remaining).replace('-', '')}` : `Restam ${formatCountdown(remaining)}`}>
             {formatCountdown(remaining)}
           </p>
           {remaining <= FIVE_MIN_MS && (
@@ -195,14 +197,10 @@ export default function RunScreen({
   const pending = view.tasks.filter((t) => t.status === 'pending' && t.type !== 'buffer');
   const lastPendingId = pending[pending.length - 1]?.id;
 
-  // Projected start times of the upcoming tasks (time blocking).
-  let cursor = now + Math.max(0, view.current?.remainingMs ?? 0);
-  const starts = {};
-  view.tasks.forEach((t) => {
-    if (t.status !== 'pending' || t.isCurrent) return;
-    starts[t.id] = cursor;
-    cursor += Math.max(0, t.remainingMs);
-  });
+  // Clock span of every card: projected starts of the upcoming tasks (time blocking) and the
+  // time rail beside the list.
+  const rail = railSpans(view, now);
+  const starts = Object.fromEntries(rail.spans.map((span) => [span.id, span.startMs]));
 
   return (
     <div className="mx-auto min-h-screen max-w-xl animate-rise px-4 pb-24 pt-4">
@@ -228,7 +226,8 @@ export default function RunScreen({
         </section>
       )}
 
-      <div ref={motion.container} className="relative mt-4">
+      <div ref={motion.container} className="relative mt-4" style={{ paddingLeft: RAIL_WIDTH }}>
+        <TimeRail container={motion.container} spans={rail.spans} now={now} currentId={rail.currentId} nowFraction={rail.nowFraction} />
         <ol className="space-y-2" aria-label="Tarefas">
           {view.tasks.map((t) => (
             <li key={t.id} data-motion-id={t.id} ref={t.isCurrent ? currentRef : null} className="relative">
@@ -251,7 +250,7 @@ export default function RunScreen({
           ))}
           {view.bufferMs > 0 && (
             <li data-motion-id="buffer" className="relative">
-              <BufferCard bufferMs={view.bufferMs} startMs={cursor} freeTime={view.allDone} expanded={expanded === 'buffer'}
+              <BufferCard bufferMs={view.bufferMs} startMs={starts.buffer} freeTime={view.allDone} expanded={expanded === 'buffer'}
                 onToggle={() => toggle('buffer')} onRelease={act(onReleaseBuffer, 'buffer', 'fly')} />
             </li>
           )}

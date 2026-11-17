@@ -17,7 +17,8 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
 - `lib/split.js` (divisão proporcional exata), `lib/clock.js` (próxima ocorrência do deadline, formatos),
   `lib/routineLink.js` (link v3, ver `docs/url-rotina-v3.md`), `lib/storage.js` (localStorage validado),
   `lib/alerts.js` + `lib/sound.js` (limites dos alertas e toques sintetizados com Web Audio),
-  `lib/cardSize.js` (altura dos cards pela raiz quadrada dos minutos, specifications.md §12).
+  `lib/cardSize.js` (altura dos cards pela raiz quadrada dos minutos, specifications.md §12),
+  `lib/timeRail.js` (régua de horários da execução: intervalo de cada card, escala, marcas; `TimeRail` desenha).
 - `App.jsx`: estado (rascunho, rotinas salvas, execução, ajustes), importação de links, encerramento.
 - `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
   `TaskListEditor`, `RunEditor`, `EndSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.

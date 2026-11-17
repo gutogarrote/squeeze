@@ -640,3 +640,48 @@ describe('card sizes', () => {
     expect(heightOf('Concluída: Guardar equipamentos')).toBeGreaterThanOrEqual(60);
   });
 });
+
+describe('time rail', () => {
+  // jsdom has no layout: every card is 100 px tall and the list stacks them 110 px apart.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function height() {
+      // eslint-disable-next-line testing-library/no-node-access -- stands in for layout: the list is as tall as its items
+      return this.hasAttribute('data-swipe-body') ? 100 : 110 * this.querySelectorAll('[data-motion-id]').length;
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function top() {
+      // eslint-disable-next-line testing-library/no-node-access -- stands in for layout: an item's place follows its order
+      const items = [...(this.closest('ol')?.querySelectorAll('[data-motion-id]') || [])];
+      return 110 * Math.max(0, items.indexOf(this));
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(380);
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const labels = () => within(screen.getByTestId('time-rail')).getAllByText(/^\d\d:\d\d$/).map((node) => node.textContent);
+
+  test('shows the clock time of every card edge and of the present', () => {
+    startExample();
+    expect(labels()).toEqual(expect.arrayContaining(['12:20', '13:20', '13:40', '14:05', '14:25', '14:45', '15:00']));
+    advance(30 * MIN);
+    expect(within(screen.getByTestId('time-rail-now')).getByText('12:50')).toBeInTheDocument();
+    // The run started at 12:20: the current task still spans from there to 13:20.
+    expect(labels()).toEqual(expect.arrayContaining(['12:20', '12:50', '13:20']));
+  });
+
+  test('follows the routine: a completed task keeps the time it took and the rest moves earlier', () => {
+    startExample();
+    advance(30 * MIN);
+    swipe(card('Tarefa atual: Orçamento'), -150);
+    expect(labels()).toEqual(expect.arrayContaining(['12:20', '12:50', '15:00']));
+    expect(labels()).not.toContain('13:20');
+    expect(card('Próxima: Banho e troca de roupa')).toHaveTextContent(labels().find((time) => time > '12:50' && time < '15:00'));
+  });
+
+  test('is decorative for assistive technology and disappears with nothing to show', () => {
+    startExample();
+    expect(screen.getByTestId('time-rail')).toHaveAttribute('aria-hidden', 'true');
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(0);
+    advance(1000);
+    expect(screen.queryByTestId('time-rail')).not.toBeInTheDocument();
+  });
+});

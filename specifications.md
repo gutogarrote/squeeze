@@ -306,6 +306,16 @@ pareça claramente maior que uma de 5 min (cerca de 2,4 vezes), mas não dez vez
 Mínimo de **60 px** (até cerca de 3 min) e máximo de **240 px** (a partir de cerca de 2 h).
 Nenhum card some ou fica ilegível quando o tempo se esgota. A regra está em `lib/cardSize.js`.
 
+### Régua de horários (em teste)
+
+À esquerda da lista, uma régua vertical **linear no tempo** vai do início da primeira tarefa ao
+fim da última (ou da folga). Como os cards não são proporcionais à duração, uma linha liga cada
+borda de card ao seu horário na régua; os horários das bordas aparecem escritos quando há
+espaço. O **agora** é uma linha tracejada vermelha que atravessa a tarefa atual na proporção do
+tempo já gasto e se liga ao horário atual na régua. Concluídas ocupam o tempo que levaram,
+contado para trás a partir da atual; as próximas são projetadas para a frente. A lógica está em
+`lib/timeRail.js`.
+
 ## 13. Rotinas salvas e persistência
 
 Não há rotinas fixas de manhã e noite. O usuário pode:

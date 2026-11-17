@@ -57,6 +57,17 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-17 — Régua de horários (experimento)
+
+- Execução: régua linear de horários à esquerda da lista (`lib/timeRail.js`, `components/TimeRail`),
+  com linhas ligando as bordas de cada card ao horário correspondente e o agora como linha
+  tracejada vermelha sobre a tarefa atual.
+- O contador da tarefa atual encolhe e a linha quebra quando o card fica estreito.
+- Verificação: lint sem avisos, 262 testes, build; três momentos de uma rotina conferidos em
+  Chromium com emulação de Pixel 7. Não verificado em aparelho.
+- A avaliar no uso: a régua tira 64 px de largura dos cards; com muita folga (começar bem antes
+  do ideal) as tarefas ficam espremidas no topo da régua; a linha do agora passa sobre o contador.
+
 ### 2026-11-17 — Sons à vista e tamanho dos cards
 
 - Planejamento: interruptor "Sons" ao lado de Começar, mostrando Ligados/Desligados; é a mesma
