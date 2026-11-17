@@ -36,6 +36,25 @@ function Hero({ draft, now }) {
   );
 }
 
+// Sounds on or off, decided in plain sight before starting (specifications.md §10).
+function SoundToggle({ on, onChange }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label="Sons dos alertas" onClick={() => onChange(!on)}
+      className={`flex shrink-0 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold ring-1 transition active:scale-[.97] ${
+        on ? 'bg-zinc-900 text-lime-200 ring-lime-300/30' : 'bg-zinc-900 text-zinc-400 ring-white/10'}`}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9Z" />
+        <path d="M10 19.5a2 2 0 0 0 4 0" />
+        {!on && <path d="M4 4l16 16" />}
+      </svg>
+      <span className="leading-tight">
+        <span className="block text-xs font-medium text-zinc-500">Sons</span>
+        <span className="block">{on ? 'Ligados' : 'Desligados'}</span>
+      </span>
+    </button>
+  );
+}
+
 function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onMove, onNew, onClose }) {
   const [confirming, setConfirming] = useState(null);
   const [renaming, setRenaming] = useState(null);
@@ -84,7 +103,7 @@ function RoutinesSheet({ templates, currentId, onOpen, onDelete, onRename, onMov
 }
 
 export default function PlanScreen({
-  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onRenameTemplate, onMoveTemplate, onNew, onShare, onSettings,
+  draft, onChange, now, templates, onStart, onSave, onSaveAsNew, onOpenTemplate, onDeleteTemplate, onRenameTemplate, onMoveTemplate, onNew, onShare, onSettings, sound, onToggleSound,
 }) {
   const [routinesOpen, setRoutinesOpen] = useState(false);
   const [savingAs, setSavingAs] = useState(false);
@@ -140,7 +159,10 @@ export default function PlanScreen({
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-zinc-950 via-zinc-950/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8">
         <div className="mx-auto max-w-xl">
-          <Button variant="primary" className="w-full py-4 text-lg" disabled={!draft.tasks.length} onClick={onStart}>Começar</Button>
+          <div className="flex items-stretch gap-2">
+            <SoundToggle on={sound} onChange={onToggleSound} />
+            <Button variant="primary" className="min-w-0 flex-1 py-4 text-lg" disabled={!draft.tasks.length} onClick={onStart}>Começar</Button>
+          </div>
         </div>
       </div>
 

@@ -23,7 +23,7 @@ const thresholdFor = (width) => Math.min(96, (width || 320) * 0.28);
 // scrolling stays native (touch-action: pan-y). Taps (no movement) call onTap.
 export default function SwipeCard({
   onSwipeLeft, onSwipeRight, leftHint, rightHint, leftIcon = '✓', rightIcon = '↓',
-  leftTone = 'emerald', rightTone = 'sky', onTap, className = '', style, children, label,
+  leftTone = 'emerald', rightTone = 'sky', onTap, className = '', style, bodyStyle, children, label,
 }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -134,6 +134,7 @@ export default function SwipeCard({
         onPointerCancel={finish}
         className={`relative h-full touch-pan-y select-none ${dragging ? 'shadow-xl shadow-black/50' : ''} ${wobble ? 'animate-wobble' : ''} ${className}`}
         style={{
+          ...bodyStyle,
           transform: x ? `translateX(${x}px)` : undefined,
           transition: dragging ? 'none' : `transform ${settle}`,
           willChange: dragging ? 'transform' : undefined,

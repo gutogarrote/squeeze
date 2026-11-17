@@ -57,6 +57,16 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-17 — Sons à vista e tamanho dos cards
+
+- Planejamento: interruptor "Sons" ao lado de Começar, mostrando Ligados/Desligados; é a mesma
+  preferência dos Ajustes.
+- Execução: a altura dos cards segue a raiz quadrada dos minutos (`lib/cardSize.js`), entre 60 e
+  240 px. Vale para as próximas (restante), as concluídas (tempo gasto), a atual (reservado, como
+  altura mínima) e a folga.
+- Verificação: lint sem avisos, 253 testes, build; planejamento e execução conferidos em Chromium
+  com emulação de Pixel 7. Próximo passo: régua de horários à esquerda (branch separado).
+
 ### 2026-11-17 — Assinatura do app e links de rotina no app
 
 - Release assinado: o build lê o keystore do ambiente e o CI o recebe por secrets; o artefato

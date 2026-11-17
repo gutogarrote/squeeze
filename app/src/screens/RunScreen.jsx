@@ -4,15 +4,10 @@ import useListMotion from '../hooks/useListMotion';
 import { Button } from '../components/Sheet';
 import TimelineCard from '../components/TimelineCard';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
+import { cardHeight } from '../lib/cardSize';
 
 const MIN_MS = 60000;
 const FIVE_MIN_MS = 5 * MIN_MS;
-const MIN_H = 64;
-const MAX_H = 144;
-
-// Card height follows the time reserved for the task (specifications.md §12).
-const heightFor = (ms) => Math.round(MIN_H + (Math.min(Math.max(ms, 0), 60 * MIN_MS) / (60 * MIN_MS)) * (MAX_H - MIN_H));
-
 function Bar({ value, total, tone }) {
   const pct = total > 0 ? Math.max(0, Math.min(100, (value / total) * 100)) : 0;
   return (
@@ -41,6 +36,7 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
         leftHint="Concluir"
         rightHint={canPostpone ? 'Adiar' : ''}
         onTap={onToggle}
+        bodyStyle={{ minHeight: cardHeight(Math.max(task.budgetMs, task.consumedMs)) }}
         className={`rounded-2xl p-5 ring-1 transition-colors duration-500 ${ring}`}
       >
         <p className="text-xs font-medium uppercase tracking-widest text-lime-300/80">Agora</p>
@@ -88,7 +84,7 @@ function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpon
         leftHint="Concluir"
         rightHint={canPostpone ? 'Adiar' : ''}
         onTap={onToggle}
-        style={{ height: heightFor(task.remainingMs) }}
+        style={{ height: cardHeight(task.remainingMs) }}
         className="flex flex-col justify-center rounded-2xl bg-zinc-900/70 px-4 py-2 ring-1 ring-white/5"
       >
         <div className="flex items-baseline justify-between gap-3">
@@ -127,7 +123,7 @@ function DoneCard({ task, expanded, onToggle, onReactivate }) {
         rightHint="Reativar"
         rightIcon="↺"
         onTap={onToggle}
-        style={{ height: MIN_H }}
+        style={{ height: cardHeight(task.consumedMs) }}
         className="flex items-center justify-between gap-3 rounded-2xl bg-zinc-900/30 px-4 ring-1 ring-white/5"
       >
         <p className="min-w-0 truncate text-zinc-500 line-through decoration-zinc-600">
@@ -153,7 +149,7 @@ function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease
         leftIcon="⇣"
         leftTone="lime"
         onTap={onToggle}
-        style={{ height: heightFor(bufferMs) }}
+        style={{ height: cardHeight(bufferMs) }}
         className="flex flex-col justify-center rounded-2xl border border-dashed border-lime-300/30 px-4"
       >
         <div className="flex items-baseline justify-between">

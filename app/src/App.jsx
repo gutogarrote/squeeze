@@ -246,6 +246,8 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
           onNew={() => setDraft({ name: '', deadline: draft.deadline, templateId: null, tasks: [] })}
           onShare={share}
           onSettings={() => setSheet('settings')}
+          sound={settings.sound}
+          onToggleSound={(sound) => { const next = { ...settings, sound }; setSettings(next); saveSettings(next); }}
         />
       )}
 

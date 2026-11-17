@@ -264,7 +264,8 @@ Regras:
   Ex.: uma tarefa de 3 min toca o aviso de 5 min ao começar e o de 1 min depois; uma tarefa adiada já
   estourada toca o toque intenso assim que volta a ser a atual.
 - Um +5 min que leva o restante de volta para cima de um limite rearma aquele toque.
-- O usuário liga e desliga os sons. Os alertas nunca mudam o estado das tarefas.
+- O usuário liga e desliga os sons nos Ajustes e, antes de começar, num interruptor sempre visível
+  ao lado de "Começar", que mostra o estado atual. Os alertas nunca mudam o estado das tarefas.
 - Os tons sustentam o volume antes de desaparecer; volume, duração e repetição crescem com a urgência.
 - Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
 
@@ -298,8 +299,12 @@ Abandonar a estética infantil: ferramenta elegante, moderna e dinâmica. Priori
 
 ### Altura dos cards
 
-Proporcional ao restante de cada tarefa, entre **64 px** e **144 px**. Nenhum card some ou fica
-ilegível quando o tempo se esgota. Proporções finais ficam a critério do design.
+A altura mostra quanto tempo cada tarefa ocupa: o restante das próximas, o tempo gasto nas
+concluídas, o reservado da atual (que nunca fica menor que o seu conteúdo) e a folga. A escala
+não é proporcional: cresce com a raiz quadrada dos minutos, de modo que uma tarefa de 50 min
+pareça claramente maior que uma de 5 min (cerca de 2,4 vezes), mas não dez vezes maior.
+Mínimo de **60 px** (até cerca de 3 min) e máximo de **240 px** (a partir de cerca de 2 h).
+Nenhum card some ou fica ilegível quando o tempo se esgota. A regra está em `lib/cardSize.js`.
 
 ## 13. Rotinas salvas e persistência
 
