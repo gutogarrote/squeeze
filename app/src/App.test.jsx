@@ -586,3 +586,57 @@ describe('rest screen', () => {
     expect(screen.queryByRole('button', { name: /Modo descanso/ })).not.toBeInTheDocument();
   });
 });
+
+describe('sounds before starting', () => {
+  test('the planner shows whether sounds are on and switches them, in step with the settings', () => {
+    render(<App clock={clock} />);
+    const toggle = screen.getByRole('switch', { name: 'Sons dos alertas' });
+    expect(toggle).toBeChecked();
+    expect(toggle).toHaveTextContent('Ligados');
+    fireEvent.click(toggle);
+    expect(toggle).not.toBeChecked();
+    expect(toggle).toHaveTextContent('Desligados');
+    expect(JSON.parse(localStorage.getItem(KEYS.settings)).sound).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+    expect(screen.getByRole('switch', { name: /^Sons\s*Toques/ })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('switch', { name: /^Sons\s*Toques/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(screen.getByRole('switch', { name: 'Sons dos alertas' })).toBeChecked();
+  });
+
+  test('the choice survives a reload', () => {
+    const { unmount } = render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Sons dos alertas' }));
+    unmount();
+    render(<App clock={clock} />);
+    expect(screen.getByRole('switch', { name: 'Sons dos alertas' })).not.toBeChecked();
+  });
+});
+
+describe('card sizes', () => {
+  // The swipeable body fills a wrapper that carries the height.
+  const heightOf = (name) => parseFloat(card(name).parentElement.style.height);
+
+  test('longer tasks get taller cards, far less than proportionally, with a minimum', () => {
+    localStorage.setItem(KEYS.draft, JSON.stringify({ name: 'Tamanhos', deadline: '14:00', tasks: [
+      { id: 'a', name: 'Atual', minutes: 10 }, { id: 'c', name: 'Curta', minutes: 5 },
+      { id: 'l', name: 'Longa', minutes: 50 }, { id: 'm', name: 'Mínima', minutes: 1 },
+    ] }));
+    nowMs = local(12, 54);
+    startExample();
+    expect(heightOf('Próxima: Longa')).toBeGreaterThan(heightOf('Próxima: Curta') * 2);
+    expect(heightOf('Próxima: Longa')).toBeLessThan(heightOf('Próxima: Curta') * 3);
+    expect(heightOf('Próxima: Mínima')).toBe(60);
+    expect(heightOf('Próxima: Curta')).toBeGreaterThan(60);
+  });
+
+  test('a completed task keeps the size of the time it took', () => {
+    startExample();
+    advance(40 * MIN);
+    swipe(card('Tarefa atual: Orçamento'), -150);
+    advance(4 * MIN);
+    swipe(card('Tarefa atual: Guardar equipamentos'), -150);
+    expect(heightOf('Concluída: Orçamento')).toBeGreaterThan(heightOf('Concluída: Guardar equipamentos') * 2);
+    expect(heightOf('Concluída: Guardar equipamentos')).toBeGreaterThanOrEqual(60);
+  });
+});
