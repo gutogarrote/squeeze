@@ -48,9 +48,55 @@ npm run android:apk    # idem + ./gradlew assembleDebug
 npx cap open android   # abre no Android Studio
 ```
 
-O CI (`android` em `.github/workflows/ci.yml`) gera o mesmo APK de debug e o publica como
-artefato `squeeze-debug-apk`. Não há assinatura de release nem publicação configuradas; não
-versionar keystores. Os assets copiados, `build/` e `local.properties` são ignorados pelo git.
+Os assets copiados, `build/` e `local.properties` são ignorados pelo git.
+
+## Assinatura e atualização
+
+O Android só instala uma versão por cima da outra se as duas tiverem a mesma assinatura; caso
+contrário é preciso desinstalar, o que apaga as rotinas salvas no app. Por isso o APK distribuído
+é um release assinado com um keystore fixo, que fica fora do repositório.
+
+Gerar o keystore uma única vez (guardar o arquivo e a senha em lugar seguro; perdê-los impede
+atualizar o app instalado):
+
+```bash
+keytool -genkeypair -v -keystore squeeze-release.jks -alias squeeze \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+O build lê a assinatura do ambiente: `SQUEEZE_KEYSTORE_FILE` (caminho do `.jks`),
+`SQUEEZE_KEYSTORE_PASSWORD`, `SQUEEZE_KEY_ALIAS`, `SQUEEZE_KEY_PASSWORD` e, opcionalmente,
+`SQUEEZE_VERSION_CODE`. Com elas definidas, `npm run android:release` gera
+`app/android/app/build/outputs/apk/release/app-release.apk` assinado.
+
+No CI, o job `android` usa os secrets `ANDROID_KEYSTORE_BASE64` (o `.jks` em base64),
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` e `ANDROID_KEY_PASSWORD`, numera a versão pelo
+número da execução e publica o artefato `squeeze-apk`. Sem os secrets (forks, por exemplo) o
+artefato é um APK de debug, que não atualiza o release instalado. Não há publicação em loja.
+
+## Links de rotina no app (App Links)
+
+Links `https://squeeze.ggarrote.workers.dev/?rotina=...` abrem no app quando ele está instalado e
+no navegador quando não está. Três peças:
+
+- `AndroidManifest.xml` declara o filtro verificado (`autoVerify`) para a raiz do site. Só a raiz:
+  `/instrucoes` continua no navegador.
+- `app/public/.well-known/assetlinks.json`, publicado com o site, lista a impressão digital
+  SHA-256 do keystore. O Android confere esse arquivo ao instalar o app; sem ele, ou com a
+  impressão errada, os links abrem sempre no navegador.
+- O plugin emite o evento `routineLink` (retido até a web escutar, para não perder o link numa
+  abertura a frio) e `App.jsx` importa a rotina como faz com o endereço na web: vira o rascunho,
+  ou pergunta antes de substituir uma rotina em andamento.
+
+Impressão digital para o `assetlinks.json`:
+
+```bash
+keytool -list -v -keystore squeeze-release.jks -alias squeeze | grep SHA256
+```
+
+Depois de alterar o arquivo é preciso publicar o site (`npm run deploy`) e reinstalar o app para
+o Android verificar de novo. Conferir no aparelho com
+`adb shell pm get-app-links app.squeeze.android` (esperado: `verified`).
 
 ## Verificação manual no aparelho
 
@@ -58,3 +104,6 @@ versionar keystores. Os assets copiados, `build/` e `local.properties` são igno
 - Repetir com o app removido dos recentes.
 - Com o app aberto, cada limite toca uma única vez.
 - +5 min e concluir a tarefa reagendam; desligar Sons ou encerrar cancela.
+- Tocar num link de rotina (por exemplo, numa mensagem) abre o app com a rotina no planejamento;
+  com uma rotina em andamento, o app pergunta antes de substituir.
+- Instalar uma versão nova por cima mantém as rotinas salvas.

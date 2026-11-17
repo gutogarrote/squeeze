@@ -79,6 +79,23 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
   }, [initial]);
   useEffect(() => { if (!toast) return undefined; const t = setTimeout(() => setToast(''), 4000); return () => clearTimeout(t); }, [toast]);
 
+  // Android app: a routine link that opens the app arrives as an event, not in the address.
+  useEffect(() => {
+    if (!native?.addListener) return undefined;
+    let handle = null;
+    let disposed = false;
+    Promise.resolve(native.addListener('routineLink', ({ url }) => {
+      let parsed;
+      try { parsed = parseRoutineLink(new URL(url).search); } catch (_) { return; }
+      if (parsed.status === 'invalid') setToast(parsed.error);
+      if (parsed.status !== 'valid') return;
+      setSheet(null);
+      if (runRef.current) setPendingImport(parsed.plan);
+      else setDraft(planFrom(parsed.plan));
+    })).then((listener) => { handle = listener; if (disposed) listener?.remove?.(); }).catch(() => {});
+    return () => { disposed = true; handle?.remove?.(); };
+  }, [native, setDraft]);
+
   const view = run ? viewRun(run, now) : null;
 
   // A run still open 12 hours after its deadline is closed (specifications.md §8).

@@ -16,7 +16,7 @@ export function buildPwa() {
         for (const entry of await readdir(directory, { withFileTypes: true })) {
           const path = `${prefix}/${entry.name}`;
           // Documentation is served independently, outside the application offline shell.
-          if (path === '/instrucoes') continue;
+          if (path === '/instrucoes' || path === '/.well-known') continue;
           if (entry.isDirectory()) await scan(resolve(directory, entry.name), path);
           else if (/\.(html|js|css|json|png|ico|svg|mp3|woff2)$/.test(path) && path !== '/sw.js') {
             const bytes = await readFile(resolve(directory, entry.name));

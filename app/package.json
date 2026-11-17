@@ -17,7 +17,8 @@
     "deploy": "npm run build && wrangler deploy --config ../wrangler.jsonc",
     "dev:assets": "npm run build && wrangler dev --local --config ../wrangler.jsonc",
     "android:sync": "npm run build && cap sync android",
-    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:release": "npm run android:sync && cd android && ./gradlew assembleRelease"
   },
   "browserslist": {
     "production": [
