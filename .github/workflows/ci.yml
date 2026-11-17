@@ -36,7 +36,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: app/package-lock.json
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6.3.0
         with:
           distribution: temurin
           java-version: '21'
@@ -63,7 +63,7 @@ jobs:
             ./gradlew assembleDebug
             cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/squeeze-debug.apk"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: squeeze-apk
           path: ${{ runner.temp }}/squeeze*.apk
