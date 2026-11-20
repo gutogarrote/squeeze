@@ -5,6 +5,7 @@ import RunEditor from './components/RunEditor';
 import RestScreen from './components/RestScreen';
 import SettingsSheet from './components/SettingsSheet';
 import EndSheet from './components/EndSheet';
+import FinishedSheet from './components/FinishedSheet';
 import Sheet, { Button } from './components/Sheet';
 import PwaUpdateNotice from './components/PwaUpdateNotice';
 import { cleanItems } from './components/TaskListEditor';
@@ -14,7 +15,7 @@ import useNativeAlerts from './hooks/useNativeAlerts';
 import useRestMode from './hooks/useRestMode';
 import useScreenWakeLock from './hooks/useScreenWakeLock';
 import {
-  addTimeToCurrent, applyEdit, completeTask, extendDeadline, postponeTask, reactivateTask,
+  addTimeToCurrent, applyEdit, completeTask, extendDeadline, moveTask, postponeTask, reactivateTask,
   releaseBuffer, runToPlanTasks, startRun, viewRun,
 } from './lib/engine';
 import { formatClock, nextOccurrence } from './lib/clock';
@@ -23,7 +24,7 @@ import {
   EXAMPLE_PLAN, loadDraft, loadRun, loadSettings, loadTemplates, makeId, normalizePlan,
   saveDraft, saveRun, saveSettings, saveTemplates, upsertTemplate,
 } from './lib/storage';
-import { primeSounds } from './lib/sound';
+import { playFeedback, primeSounds } from './lib/sound';
 import { nativeAlerts, shareOrigin } from './lib/native';
 import { typeProps } from './lib/taskTypes';
 
@@ -43,7 +44,7 @@ function readLink() {
   return parsed;
 }
 
-export default function App({ clock = Date.now, native = nativeAlerts() }) {
+export default function App({ clock = Date.now, native = nativeAlerts(), feedback = playFeedback }) {
   const now = useNow(clock);
   const [link] = useState(readLink);
   const [settings, setSettings] = useState(loadSettings);
@@ -63,7 +64,7 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
     if (link.status === 'invalid') return link.error;
     return initial.expiredAtLoad ? 'A rotina anterior foi encerrada automaticamente, 12 horas depois do deadline.' : '';
   });
-  const [sheet, setSheet] = useState(null); // 'settings' | 'end' | 'edit' | { share: url }
+  const [sheet, setSheet] = useState(null); // 'settings' | 'end' | 'finished' | 'edit' | { share: url }
   const runRef = useRef(run);
   runRef.current = run;
 
@@ -109,8 +110,11 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
 
   const rest = useRestMode({ active: !!view && !view.allDone && !sheet, restAfterMin: settings.restAfterMin, now, clock });
   // In the Android app the system plays the alerts (they must sound with the screen off).
-  const playNative = useNativeAlerts(view, now, { enabled: settings.sound, bridge: native });
-  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, play: playNative });
+  const reminderMs = settings.reminderMin * 60000;
+  const playNative = useNativeAlerts(view, now, { enabled: settings.sound, bridge: native, reminderMs });
+  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, play: playNative, reminderMs });
+  // Short sounds answering the user's own gestures follow the same switch.
+  const cue = (name) => { if (settings.sound) feedback(name); };
   const wakeLock = useScreenWakeLock(!!view && sheet !== 'edit', !!view?.allDone);
 
   // Every gesture applies an engine operation; it returns false when nothing changed.
@@ -128,7 +132,7 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
     const plan = { ...draft, tasks };
     setDraft(plan);
     if (native) Promise.resolve(native.requestNotifications()).catch(() => {});
-    else primeSounds();
+    primeSounds();
     setRun(startRun({ name: draft.name.trim() || 'Rotina', templateId: draft.templateId, deadlineMs: nextOccurrence(draft.deadline, clock()), tasks }, clock()));
   }
 
@@ -168,20 +172,67 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
     saveTemplates(list);
   }
 
-  async function share() {
-    let url;
+  function routineUrl(plan) {
     try {
-      url = serializeRoutineLink(shareOrigin(), { name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
+      return serializeRoutineLink(shareOrigin(!!native), plan);
     } catch (error) {
       setToast(error.message);
-      return;
+      return null;
     }
+  }
+
+  async function copyLink(url) {
     try {
       await navigator.clipboard.writeText(url);
       setToast('Link copiado.');
     } catch (_) {
       setSheet({ share: url });
     }
+  }
+
+  async function share() {
+    const url = routineUrl({ name: draft.name.trim(), deadline: draft.deadline, tasks: cleanItems(draft.tasks) });
+    if (url) await copyLink(url);
+  }
+
+  // The routine being run, as it stands now (edits included), through the system's share
+  // sheet when there is one; otherwise the link is copied.
+  async function shareRun() {
+    const current = runRef.current;
+    if (!current) return;
+    const url = routineUrl({ name: current.name, deadline: formatClock(current.deadlineMs), tasks: runToPlanTasks(current) });
+    if (!url) return;
+    const title = `${current.name} — Squeeze`;
+    try {
+      if (native?.share) { await native.share({ title, url }); return; }
+      if (navigator.share) { await navigator.share({ title, url }); return; }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+    }
+    await copyLink(url);
+  }
+
+  // Completing the last task ends the routine: a celebration and the closing options.
+  function complete(id) {
+    const changed = apply((r, t) => completeTask(r, id, t));
+    if (!changed) return false;
+    if (viewRun(runRef.current, clock()).allDone) {
+      cue('finish');
+      setSheet('finished');
+    } else cue('done');
+    return true;
+  }
+
+  function postpone(id) {
+    const changed = apply((r, t) => postponeTask(r, id, t));
+    if (changed) cue('postpone');
+    return changed;
+  }
+
+  function move(id, to) {
+    const changed = apply((r, t) => moveTask(r, id, to, t));
+    if (changed) cue('postpone');
+    return changed;
   }
 
   function endRun({ save = false, restart = false } = {}) {
@@ -220,8 +271,11 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
         <RunScreen
           view={view}
           now={now}
-          onComplete={(id) => apply((r, t) => completeTask(r, id, t))}
-          onPostpone={(id) => apply((r, t) => postponeTask(r, id, t))}
+          onComplete={complete}
+          onPostpone={postpone}
+          onMove={move}
+          onShare={shareRun}
+          onFinish={() => setSheet('finished')}
           onReactivate={(id) => apply((r, t) => reactivateTask(r, id, t))}
           onReleaseBuffer={() => apply((r, t) => releaseBuffer(r, t))}
           onAddFive={() => apply((r, t) => addTimeToCurrent(r, t))}
@@ -254,6 +308,10 @@ export default function App({ clock = Date.now, native = nativeAlerts() }) {
       {sheet === 'edit' && view && (
         <RunEditor view={view} now={now} onCancel={() => setSheet(null)}
           onSave={(edit) => { apply((r, t) => applyEdit(r, edit, t)); setSheet(null); }} />
+      )}
+      {sheet === 'finished' && view && (
+        <FinishedSheet view={view} now={now} hasTemplate={templates.some((t) => t.id === run.templateId)}
+          onEnd={endRun} onEdit={() => setSheet('edit')} onClose={() => setSheet(null)} />
       )}
       {sheet === 'end' && view && (
         <EndSheet hasTemplate={templates.some((t) => t.id === run.templateId)} onEnd={endRun} onClose={() => setSheet(null)} />

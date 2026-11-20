@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SwipeCard from '../components/SwipeCard';
 import useListMotion from '../hooks/useListMotion';
+import useReorder from '../hooks/useReorder';
 import { Button } from '../components/Sheet';
 import TimelineCard from '../components/TimelineCard';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
@@ -17,11 +18,26 @@ function Bar({ value, total, tone }) {
   );
 }
 
+// Two short lines in the top-right corner: hold, then drag to move the task.
+function DragHandle({ name, props, active }) {
+  return (
+    <button type="button" aria-label={`Mover ${name}`} title="Segure e arraste para mover"
+      aria-keyshortcuts="ArrowUp ArrowDown" {...props}
+      style={{ touchAction: 'none' }}
+      className={`absolute right-1.5 top-1.5 z-10 grid h-8 w-9 select-none place-items-center rounded-lg transition ${
+        active ? 'bg-white/15 text-zinc-100' : 'text-zinc-500 hover:bg-white/10 hover:text-zinc-300'}`}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M6 9.5h12M6 14.5h12" />
+      </svg>
+    </button>
+  );
+}
+
 function Actions({ children }) {
   return <div className="mt-2 flex flex-wrap justify-end gap-2">{children}</div>;
 }
 
-function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpone, canPostpone }) {
+function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpone, canPostpone, handle }) {
   const remaining = task.remainingMs;
   const over = remaining < 0;
   const warn = !over && remaining <= FIVE_MIN_MS;
@@ -39,6 +55,7 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
         bodyStyle={{ minHeight: cardHeight(Math.max(task.budgetMs, task.consumedMs)) }}
         className={`rounded-2xl p-5 ring-1 transition-colors duration-500 ${ring}`}
       >
+        {handle}
         <p className="text-xs font-medium uppercase tracking-widest text-lime-300/80">Agora</p>
         <h2 className="mt-1 text-2xl font-semibold leading-tight text-zinc-50">{task.name}</h2>
         {task.type === 'fixed' && <p className="mt-1 text-xs font-medium text-sky-300">Tempo fixo · não faz squeeze</p>}
@@ -72,7 +89,7 @@ function CurrentCard({ task, onAddFive, expanded, onToggle, onComplete, onPostpo
   );
 }
 
-function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpone, canPostpone }) {
+function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpone, canPostpone, handle }) {
   const compressed = task.compressed;
   const expandedTime = task.remainingMs > task.referenceMs && task.referenceMs > 0;
   return (
@@ -85,8 +102,9 @@ function UpcomingCard({ task, startMs, expanded, onToggle, onComplete, onPostpon
         rightHint={canPostpone ? 'Adiar' : ''}
         onTap={onToggle}
         style={{ height: cardHeight(task.remainingMs) }}
-        className="flex flex-col justify-center rounded-2xl bg-zinc-900/70 px-4 py-2 ring-1 ring-white/5"
+        className="flex flex-col justify-center rounded-2xl bg-zinc-900/70 py-2 pl-4 pr-12 ring-1 ring-white/5"
       >
+        {handle}
         <div className="flex items-baseline justify-between gap-3">
           <p className="min-w-0 truncate text-base font-medium text-zinc-100">{task.name}</p>
           <p className="shrink-0 tabular-nums text-zinc-100">
@@ -168,7 +186,7 @@ function BufferCard({ bufferMs, startMs, freeTime, expanded, onToggle, onRelease
 }
 
 export default function RunScreen({
-  view, now, onComplete, onPostpone, onReactivate, onReleaseBuffer, onAddFive, onExtendDeadline, onEdit, onEnd, onSettings,
+  view, now, onComplete, onPostpone, onMove, onShare, onFinish, onReactivate, onReleaseBuffer, onAddFive, onExtendDeadline, onEdit, onEnd, onSettings,
 }) {
   const [expanded, setExpanded] = useState(null);
   const currentRef = useRef(null);
@@ -194,6 +212,18 @@ export default function RunScreen({
   const postpone = (id) => act(() => onPostpone(id), id, 'lift');
   const pending = view.tasks.filter((t) => t.status === 'pending' && t.type !== 'buffer');
   const lastPendingId = pending[pending.length - 1]?.id;
+  const reorder = useReorder({
+    container: motion.container,
+    ids: pending.map((t) => t.id),
+    onDrop: (id, to) => {
+      setExpanded(null);
+      motion.snapshot(id, 'lift');
+      if (!onMove(id, to)) motion.cancel();
+    },
+  });
+  const handleFor = (t) => (pending.length > 1
+    ? <DragHandle name={t.name} props={reorder.handleProps(t.id)} active={reorder.drag?.id === t.id} />
+    : null);
 
   // Projected start times of the upcoming tasks (time blocking).
   let cursor = now + Math.max(0, view.current?.remainingMs ?? 0);
@@ -215,7 +245,7 @@ export default function RunScreen({
         )}
         {view.deficitMs > 0 && !view.late && !view.protectedDeficitMs && (
           <p role="status" className="mt-2 rounded-xl bg-amber-400/10 px-4 py-2 text-sm text-amber-200 ring-1 ring-amber-400/30">
-            Faltam {formatMinutes(view.deficitMs)} para caber tudo: as próximas tarefas estão comprimidas.
+            <strong className="font-semibold">Squeeze!</strong> Faltam {formatMinutes(view.deficitMs)} para caber tudo.
           </p>
         )}
       </header>
@@ -224,14 +254,14 @@ export default function RunScreen({
         <section className="mt-4 animate-pop-in rounded-2xl bg-lime-300/10 p-5 ring-1 ring-lime-300/30">
           <p className="text-xl font-semibold text-lime-200">Tudo feito!</p>
           <p className="mt-1 text-zinc-300">Deslize uma tarefa concluída para a direita para reativá-la, inclua tarefas em Editar ou encerre a rotina.</p>
-          <Button variant="primary" className="mt-3" onClick={onEnd}>Encerrar rotina</Button>
+          <Button variant="primary" className="mt-3" onClick={onFinish}>Encerrar rotina</Button>
         </section>
       )}
 
       <div ref={motion.container} className="relative mt-4">
         <ol className="space-y-2" aria-label="Tarefas">
           {view.tasks.map((t) => (
-            <li key={t.id} data-motion-id={t.id} ref={t.isCurrent ? currentRef : null} className="relative">
+            <li key={t.id} data-motion-id={t.id} ref={t.isCurrent ? currentRef : null} className="relative" style={reorder.itemStyle(t.id)}>
               {t.status === 'done' ? (
                 <DoneCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
                   onReactivate={act(() => onReactivate(t.id), t.id, 'lift')} />
@@ -241,11 +271,11 @@ export default function RunScreen({
               ) : t.isCurrent ? (
                 <CurrentCard task={t} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
                   canPostpone={t.id !== lastPendingId}
-                  onAddFive={onAddFive} onComplete={complete(t.id)} onPostpone={postpone(t.id)} />
+                  onAddFive={onAddFive} onComplete={complete(t.id)} onPostpone={postpone(t.id)} handle={handleFor(t)} />
               ) : (
                 <UpcomingCard task={t} startMs={starts[t.id]} expanded={expanded === t.id} onToggle={() => toggle(t.id)}
                   canPostpone={t.id !== lastPendingId}
-                  onComplete={complete(t.id)} onPostpone={postpone(t.id)} />
+                  onComplete={complete(t.id)} onPostpone={postpone(t.id)} handle={handleFor(t)} />
               )}
             </li>
           ))}
@@ -276,12 +306,18 @@ export default function RunScreen({
       </section>
       <nav aria-label="Ações da rotina" className="mt-4 flex items-center justify-end gap-1">
         <p className="mr-auto min-w-0 truncate text-sm text-zinc-500">{view.name}</p>
+        <Button variant="secondary" onClick={onShare} aria-label="Compartilhar rotina" title="Compartilhar rotina">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" />
+            <path d="M8.2 10.8l7.6-4.5M8.2 13.2l7.6 4.5" />
+          </svg>
+        </Button>
         <Button variant="secondary" onClick={onEdit}>Editar</Button>
         <Button variant="secondary" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
         <Button variant="secondary" onClick={onEnd}>Encerrar</Button>
       </nav>
       {!view.allDone && (
-        <p className="mt-6 text-center text-xs text-zinc-600">Deslize ← para concluir, → para adiar. Toque num card para ver as ações.</p>
+        <p className="mt-6 text-center text-xs text-zinc-600">Deslize ← para concluir, → para adiar. Segure e arraste as duas linhas de um card para movê-lo. Toque num card para ver as ações.</p>
       )}
     </div>
   );

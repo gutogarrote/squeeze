@@ -32,8 +32,10 @@ test('a run survives a round trip', () => {
 });
 
 test('settings keep only known values', () => {
-  saveSettings({ sound: false, restAfterMin: 3 });
-  expect(loadSettings()).toEqual({ sound: false, restAfterMin: 2 });
+  saveSettings({ sound: false, restAfterMin: 3, reminderMin: 7 });
+  expect(loadSettings()).toEqual({ sound: false, restAfterMin: 2, reminderMin: 2 });
+  saveSettings({ sound: true, restAfterMin: 5, reminderMin: 0 });
+  expect(loadSettings()).toEqual({ sound: true, restAfterMin: 5, reminderMin: 0 });
 });
 
 test('upsertTemplate inserts, then replaces by id', () => {

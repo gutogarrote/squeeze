@@ -1,6 +1,7 @@
 package app.squeeze.android;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -22,7 +23,7 @@ import org.json.JSONObject;
  * Bridge used by the web app (lib/native.js):
  * - sync({ alerts }): replaces the exact alarms for the current task's alerts;
  * - play({ alert }): plays one alert now, unless its alarm already did;
- * - keepScreenOn({ on }); requestNotifications();
+ * - keepScreenOn({ on }); requestNotifications(); share({ title, url }) opens the share sheet;
  * - event "routineLink" { url }: a routine link opened the app (App Links).
  */
 @CapacitorPlugin(
@@ -100,6 +101,26 @@ public class SqueezeAlertsPlugin extends Plugin {
             result.put("played", played);
             call.resolve(result);
         });
+    }
+
+    @PluginMethod
+    public void share(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || url.isEmpty()) {
+            call.reject("url is required");
+            return;
+        }
+        String title = call.getString("title", "");
+        Intent send = new Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, title)
+            .putExtra(Intent.EXTRA_TEXT, url);
+        try {
+            getActivity().startActivity(Intent.createChooser(send, title));
+            call.resolve();
+        } catch (ActivityNotFoundException e) {
+            call.reject("no app can share");
+        }
     }
 
     @PluginMethod

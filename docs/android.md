@@ -22,6 +22,10 @@ apaga. No app, quem toca é o Android:
    em vez do Web Audio. A chave garante que alarme e WebView nunca toquem o mesmo alerta
    duas vezes (`AlertStore.claim`).
 
+Os lembretes depois do fim da tarefa (§10 de specifications.md) também viram alarmes: até 30,
+cobrindo cerca de uma hora de atraso. Os sons curtos dos gestos (concluir, adiar, fim da rotina)
+tocam pela WebView, no volume de mídia, porque só acontecem com o app aberto.
+
 Os toques usam o **volume de alarme** (`USAGE_ALARM`): soam com o volume de mídia zerado.
 Enquanto há alertas agendados, o Android mostra o ícone de alarme na barra de status.
 
@@ -29,6 +33,9 @@ Permissões: `USE_EXACT_ALARM` (API 33+) e `SCHEDULE_EXACT_ALARM` (até a API 32
 exatos, `WAKE_LOCK`, `POST_NOTIFICATIONS` (pedida ao tocar em Começar; recusar não impede o som)
 e `VIBRATE` (retorno tátil do swipe). `USE_EXACT_ALARM` é restrita, na Play Store, a apps de
 alarme/timer: declarar essa função principal na publicação.
+
+Compartilhar durante a rotina abre a folha de compartilhamento do Android (`SqueezeAlerts.share`),
+com o link no endereço público.
 
 Outras diferenças do app: "Manter a tela acesa" usa a flag nativa da janela quando a WebView não
 tem a Screen Wake Lock API (`installWakeLock`); o service worker da PWA não é registrado; links

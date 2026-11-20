@@ -1,5 +1,25 @@
 # Instruções oficiais — links de rotina v3
 
+## Prompt pronto para qualquer agente
+
+Copie o texto abaixo, troque o trecho entre colchetes pela sua rotina e envie a qualquer agente de IA. Ele resume as regras deste documento.
+
+```prompt
+Monte um link de rotina para o app Squeeze seguindo estas regras (instruções completas: https://squeeze.ggarrote.workers.dev/instrucoes.md).
+Minha rotina: [nome da rotina, tarefas em ordem com os minutos de cada uma, horário do deadline e, se houver, quais tarefas são fixas e qual é a folga].
+Pergunte o que faltar; não invente tarefas, minutos nem deadline.
+Formato: a base https://squeeze.ggarrote.workers.dev/ seguida de ?rotina=3.HHMM.Tarefa-min.Tarefa-min...&nome=Nome_da_rotina
+- HHMM é o deadline em 24 horas com quatro dígitos (0930, 1500). Vale a próxima ocorrência desse horário.
+- Cada tarefa é Nome-minutos, separada da seguinte por ponto. Os minutos são o que vem depois do último hífen: Treino-5-30 é "Treino-5" com 30 min.
+- Nos nomes das tarefas e da rotina: espaço vira _; letras, números e - vão como estão; pontuação ASCII vira ~ mais o código hexadecimal em maiúsculas (. ~2E, , ~2C, : ~3A, / ~2F, ? ~3F, ! ~21, ( ~28, ) ~29, & ~26, + ~2B, # ~23, = ~3D, ' ~27, " ~22, ; ~3B, @ ~40, ~ ~7E, % ~25). Nunca use underscore literal nem % para caracteres ASCII. Acentos e emojis podem ir literais ou em UTF-8 percent-encoded uma única vez.
+- Opcional: &tipos=normal,fixo,folga com exatamente um tipo por tarefa, na mesma ordem, sem escapar as vírgulas; no máximo uma folga. Sem tipos, todas são normais.
+- Limites: 1 a 40 tarefas, 1 a 720 min cada, até 1440 min no total, nomes com até 80 caracteres, valor de rotina com até 6000 caracteres.
+- Não acrescente outros parâmetros (data, horário de início, cores, ícones).
+Entregue o link clicável e uma conferência: nome da rotina, tarefas com minutos e tipo, deadline e horário ideal de início (deadline menos a soma dos minutos).
+```
+
+## Sobre estas instruções
+
 Um link v3 abre no Squeeze uma rotina pronta: deadline, tarefas, durações e ordem. Este documento é completo e pode ser entregue sozinho a uma IA para construir links.
 
 A fonte canônica é `docs/url-rotina-v3.md`. O build gera deste mesmo texto a página `/instrucoes` e o arquivo `/instrucoes.md`. No host oficial: [instruções](https://squeeze.ggarrote.workers.dev/instrucoes) e [Markdown para máquinas](https://squeeze.ggarrote.workers.dev/instrucoes.md).
@@ -77,15 +97,3 @@ Espaço vira `_`. Underscore literal não é suportado. Letras, números e `-` v
 O app abre a rotina no planejamento, mostrando o horário ideal de início, sem alterar as rotinas salvas; o usuário pode salvá-la. Se houver uma rotina em andamento, o app pergunta antes de substituí-la. Um link inválido não altera nada: o app avisa e continua com os dados locais. Tudo fica no aparelho; não há conta, servidor ou sincronização.
 
 Não há campos para data, horário de início, andamento, tarefas concluídas, ícones, cores ou configurações. Não acrescente parâmetros para tentar configurá-los.
-
-## Prompt pronto para qualquer agente
-
-```text
-Use as instruções oficiais de links v3 do Squeeze para montar um link em https://squeeze.ggarrote.workers.dev/.
-Minha solicitação: [nome da rotina, tarefas em ordem, minutos de cada uma e deadline].
-Pergunte o que faltar; não invente tarefas, minutos ou deadline.
-Formato: ?rotina=3.HHMM.Tarefa-min.Tarefa-min...&nome=Nome. Use _ para espaços, ~HH em maiúsculas para pontuação ASCII, nunca underscore literal nem % para ASCII. Acentos e emojis podem ir literais ou em UTF-8 percent-encoded uma vez.
-Opcional: &tipos=normal,fixo,folga com exatamente um tipo por tarefa, na mesma ordem; no máximo uma folga.
-Limites: 1 a 40 tarefas, 1 a 720 min cada, total até 1440, nomes até 80 caracteres.
-Entregue o link clicável e uma conferência com nomes, minutos, deadline e o horário ideal de início (deadline menos a soma).
-```

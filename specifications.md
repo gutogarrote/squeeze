@@ -126,6 +126,15 @@ sendo a atual até o usuário concluí-la ou adiá-la.
 Não há bolinhas nem caixas de seleção de conclusão: os swipes substituem esse mecanismo.
 Reativar é o "desfazer" de uma conclusão.
 
+**Reordenar durante a rotina:** cada tarefa pendente (atual ou próxima) tem duas linhas no canto
+superior direito. Segurando-as por um instante (0,3 s) o card se solta e pode ser arrastado para
+qualquer posição entre as pendentes; arrastar sem segurar antes não move nada. A tarefa mantém
+seu tempo, como ao adiar; concluídas ficam no lugar; a que ficar primeiro vira a atual. Pelo
+teclado, as setas para cima e para baixo movem uma posição.
+
+**Sons dos gestos** (seguem o interruptor de sons): concluir toca um "plim" curto de pequena
+vitória; adiar ou mover toca três notas descendentes, de troca. Gestos sem efeito não tocam.
+
 Exemplo de conclusão antecipada: durante "Arrumar equipamento" ainda faltam "Guardar equipamento no
 carro", "Escrever orçamento" e "Almoçar". Quem come algo enquanto arruma faz swipe para a esquerda em
 "Almoçar": ela é concluída, o orçamento dela é distribuído e "Arrumar equipamento" segue como a atual.
@@ -234,6 +243,13 @@ folga) e pode incluir novas tarefas para aproveitar o tempo até o deadline.
 ## 8. Encerramento
 
 - O usuário pode encerrar a rotina a qualquer momento (com confirmação).
+- Concluir a última tarefa pendente encerra a rotina: toca um som curto de comemoração e abre a
+  janela **Rotina concluída**, com o resumo (tarefas, tempo, margem em relação ao deadline) e as
+  opções salvar as alterações na rotina (ou salvar como rotina), recomeçar com novo deadline,
+  editar a rotina (continua a execução, para incluir tarefas) e encerrar sem salvar. Fechar a
+  janela mantém a timeline concluída, onde ainda é possível reativar uma tarefa.
+- Durante a rotina, o botão de compartilhar envia o link da rotina como está (tarefas, estimativas
+  e deadline atuais) pela folha de compartilhamento do sistema; sem ela, copia o link.
 - Ao encerrar, pode escolher **atualizar o modelo** com as tarefas e estimativas desta execução.
 - Uma rotina aberta é encerrada automaticamente **12 horas depois do deadline**.
 
@@ -267,6 +283,9 @@ Regras:
 - O usuário liga e desliga os sons nos Ajustes e, antes de começar, num interruptor sempre visível
   ao lado de "Começar", que mostra o estado atual. Os alertas nunca mudam o estado das tarefas.
 - Os tons sustentam o volume antes de desaparecer; volume, duração e repetição crescem com a urgência.
+- Depois que o tempo da tarefa acaba, um **lembrete** curto e suave toca a cada 2 min enquanto
+  ela continua a atual (ajustável nos Ajustes: a cada 2 min, a cada 5 min ou nunca). Um +5 min
+  que devolve tempo à tarefa rearma os lembretes.
 - Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
 
 Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
@@ -301,9 +320,9 @@ Abandonar a estética infantil: ferramenta elegante, moderna e dinâmica. Priori
 
 A altura mostra quanto tempo cada tarefa ocupa: o restante das próximas, o tempo gasto nas
 concluídas, o reservado da atual (que nunca fica menor que o seu conteúdo) e a folga. A escala
-não é proporcional: cresce com a raiz quadrada dos minutos, de modo que uma tarefa de 50 min
-pareça claramente maior que uma de 5 min (cerca de 2,4 vezes), mas não dez vezes maior.
-Mínimo de **60 px** (até cerca de 3 min) e máximo de **240 px** (a partir de cerca de 2 h).
+não é proporcional: cresce com os minutos elevados a 0,56, de modo que uma tarefa de 40 min
+pareça claramente maior que uma de 5 min (cerca de 3,2 vezes), mas não oito vezes maior.
+Mínimo de **60 px** (até cerca de 4 min) e máximo de **320 px** (a partir de cerca de 1 h 30).
 Nenhum card some ou fica ilegível quando o tempo se esgota. A regra está em `lib/cardSize.js`.
 
 ## 13. Rotinas salvas e persistência

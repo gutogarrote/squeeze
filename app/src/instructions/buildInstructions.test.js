@@ -3,6 +3,7 @@ import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { vi } from 'vitest';
 import { buildInstructions, canonicalDocument, instructionsAssets, renderInstructions } from './buildInstructions.mjs';
 import { parseRoutineLink, serializeRoutineLink } from '../lib/routineLink';
 
@@ -37,14 +38,21 @@ test('every documented routine link parses, uses only supported fields, and matc
   });
 });
 
-test('generated HTML exposes all document content, code and prompt without JavaScript', async () => {
+test('generated HTML exposes all document content, code and prompt, readable without JavaScript', async () => {
   const { markdown, html } = await instructionsAssets();
   expect(markdown).toBe(doc);
   expect(renderInstructions(markdown)).toBe(html);
   const page = new JSDOM(html).window.document;
   expect(page.documentElement.lang).toBe('pt-BR');
   expect(page.title).toContain('Instruções oficiais');
-  expect(page.querySelectorAll('script')).toHaveLength(0);
+  // One small script for the copy button; everything else is static.
+  expect(page.querySelectorAll('script')).toHaveLength(1);
+  const prompt = page.getElementById('prompt');
+  expect(prompt.textContent).toBe(/```prompt\n([\s\S]*?)```/.exec(doc)[1].trimEnd());
+  // The prompt comes before the rest of the instructions.
+  const firstRule = [...page.querySelectorAll('h2')].find((h) => h.textContent === 'Como construir um link');
+  expect(prompt.compareDocumentPosition(firstRule) & page.defaultView.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(page.querySelector('[data-copy="prompt"]').hidden).toBe(true);
   expect(page.querySelector('a[href="/instrucoes.md"]')).not.toBeNull();
   expect(page.querySelectorAll('h1')).toHaveLength(1);
   for (const heading of [...doc.matchAll(/^#{1,3} (.+)$/gm)]) expect(page.body.textContent).toContain(heading[1]);
@@ -114,4 +122,20 @@ test('every punctuation escape printed in the documentation decodes to the state
     expect(parsed.status).toBe('valid');
     expect(parsed.plan.tasks[0].name).toBe('prefix' + text);
   }
+});
+
+test('the copy button copies the prompt where the clipboard exists, and stays hidden elsewhere', async () => {
+  const { html } = await instructionsAssets();
+  const withClipboard = new JSDOM(html, { runScripts: 'dangerously', beforeParse(window) {
+    window.navigator.clipboard = { writeText: vi.fn(() => Promise.resolve()) };
+  } }).window;
+  const button = withClipboard.document.querySelector('[data-copy="prompt"]');
+  expect(button.hidden).toBe(false);
+  button.click();
+  await new Promise((resolveTick) => setTimeout(resolveTick, 0));
+  expect(withClipboard.navigator.clipboard.writeText).toHaveBeenCalledWith(withClipboard.document.getElementById('prompt').textContent);
+  expect(withClipboard.document.querySelector('.copy-status').textContent).toBe('Prompt copiado.');
+  const without = new JSDOM(html, { runScripts: 'dangerously' }).window;
+  expect(without.document.querySelector('[data-copy="prompt"]').hidden).toBe(true);
+  expect(renderInstructions('# Só texto\n\nNada para copiar.')).not.toContain('<script>');
 });

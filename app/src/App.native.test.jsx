@@ -24,6 +24,8 @@ const LINK = 'https://squeeze.ggarrote.workers.dev/?rotina=3.0900.Cafe-10.Banho-
 const clock = () => nowMs;
 const advance = (ms) => { nowMs += ms; act(() => { vi.advanceTimersByTime(1000); }); };
 const lastSync = () => native.sync.mock.calls.at(-1)[0].alerts;
+// The three thresholds, without the overrun reminders that follow them.
+const thresholds = () => lastSync().filter((a) => a.level !== LEVEL.reminder);
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
@@ -46,8 +48,9 @@ test('starting schedules the alarms of the current task and asks for notificatio
   expect(lastSync()).toEqual([]);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   expect(native.requestNotifications).toHaveBeenCalledOnce();
-  expect(sound.primeSounds).not.toHaveBeenCalled();
-  expect(lastSync().map((a) => [a.level, a.atMs, a.body])).toEqual([
+  // Web Audio still plays the short gesture sounds.
+  expect(sound.primeSounds).toHaveBeenCalledOnce();
+  expect(thresholds().map((a) => [a.level, a.atMs, a.body])).toEqual([
     [LEVEL.five, local(13, 15), 'Orçamento'], [LEVEL.one, local(13, 19), 'Orçamento'], [LEVEL.zero, local(13, 20), 'Orçamento'],
   ]);
   expect(screen.queryByText('pwa')).not.toBeInTheDocument();
@@ -70,7 +73,7 @@ test('more time, the next task, muting and ending all reschedule', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   advance(56 * MIN);
   fireEvent.click(screen.getByRole('button', { name: '+5 min' }));
-  expect(lastSync().at(-1).atMs).toBe(local(13, 25));
+  expect(thresholds().at(-1).atMs).toBe(local(13, 25));
   fireEvent.pointerDown(screen.getByRole('group', { name: 'Tarefa atual: Orçamento' }), { clientX: 10, clientY: 10, pointerId: 1, button: 0 });
   fireEvent.pointerUp(screen.getByRole('group', { name: 'Tarefa atual: Orçamento' }), { clientX: 10, clientY: 10, pointerId: 1 });
   fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
@@ -80,7 +83,7 @@ test('more time, the next task, muting and ending all reschedule', () => {
   expect(lastSync()).toEqual([]);
   expect(screen.getByText(/mesmo com a tela apagada/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('switch', { name: /Sons/ }));
-  expect(lastSync()).toHaveLength(3);
+  expect(thresholds()).toHaveLength(3);
   fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Encerrar' }));
@@ -114,4 +117,27 @@ test('a link opened during a routine asks before replacing it', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Substituir' }));
   expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Cafe');
   expect(lastSync()).toEqual([]);
+});
+
+test('sharing the running routine opens the Android share sheet with the public address', async () => {
+  native.share = vi.fn(() => Promise.resolve());
+  render(<App clock={clock} native={native} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Compartilhar rotina' }));
+  await act(async () => { await Promise.resolve(); });
+  expect(native.share).toHaveBeenCalledWith({
+    title: 'Tarde — Squeeze',
+    url: expect.stringMatching(/^https:\/\/squeeze\.ggarrote\.workers\.dev\/\?rotina=3\.1500\./),
+  });
+});
+
+test('overrun reminders are scheduled after the end of the task, following the setting', () => {
+  render(<App clock={clock} native={native} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+  const reminders = lastSync().filter((a) => a.level === LEVEL.reminder);
+  expect(reminders[0].atMs).toBe(local(13, 22));
+  expect(reminders[1].atMs).toBe(local(13, 24));
+  fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+  fireEvent.change(screen.getByRole('combobox', { name: 'Lembrete depois do tempo' }), { target: { value: '0' } });
+  expect(lastSync().filter((a) => a.level === LEVEL.reminder)).toEqual([]);
 });

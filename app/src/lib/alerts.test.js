@@ -1,4 +1,4 @@
-import { LEVEL, alertLevel, nextAlert } from './alerts';
+import { LEVEL, alertLevel, nextAlert, remindersDue } from './alerts';
 
 const M = 60000;
 
@@ -42,4 +42,27 @@ test('+5 min re-arms the thresholds it goes back above', () => {
 
 test('opening the app mid-task does not play what already happened', () => {
   expect(play([['a', -3 * M], ['a', -4 * M]], { silent: true })).toEqual([0, 0]);
+});
+
+test('after the time runs out a soft reminder plays every interval, once each', () => {
+  const opts = { reminderMs: 2 * M };
+  let state = null;
+  const seq = [M, 0, -M, -2 * M, -2 * M - 1000, -3 * M, -4 * M, -9 * M].map((remaining) => {
+    const out = nextAlert(state, 'a', remaining, opts);
+    state = out.state;
+    return out.play;
+  });
+  expect(seq).toEqual([LEVEL.one, LEVEL.zero, 0, LEVEL.reminder, 0, 0, LEVEL.reminder, LEVEL.reminder]);
+});
+
+test('reminders are off with interval 0, re-arm after +5 min and never replay on activation', () => {
+  expect(remindersDue(-10 * M, 0)).toBe(0);
+  expect(remindersDue(30000, 2 * M)).toBe(0);
+  expect(remindersDue(-5 * M, 2 * M)).toBe(2);
+  let state = nextAlert(null, 'a', -5 * M, { reminderMs: 2 * M }).state;
+  expect(nextAlert(state, 'a', -5 * M - 1000, { reminderMs: 2 * M }).play).toBe(0);
+  state = nextAlert(state, 'a', 3 * M, { reminderMs: 2 * M }).state;
+  state = nextAlert(state, 'a', 0, { reminderMs: 2 * M }).state;
+  expect(nextAlert(state, 'a', -2 * M, { reminderMs: 2 * M }).play).toBe(LEVEL.reminder);
+  expect(nextAlert(state, 'a', -20 * M).play).toBe(0);
 });

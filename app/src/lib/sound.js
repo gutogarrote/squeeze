@@ -1,5 +1,6 @@
-// Alert tones, synthesized with Web Audio (no audio files needed). Browsers only allow
-// sound after a user gesture, so primeSounds() runs on the "Começar" tap.
+// Alert and feedback tones, synthesized with Web Audio (no audio files needed). Browsers only
+// allow sound after a user gesture, so primeSounds() runs on the "Começar" tap. The Android
+// app plays the alerts natively from the same recipes (lib/nativeAlerts.js).
 import { LEVEL } from './alerts';
 
 // [frequency Hz, start s, duration s, gain, wave]
@@ -13,6 +14,22 @@ export const TONES = {
     [988, 0, 0.28, 0.44, 'square'], [784, 0.38, 0.28, 0.44, 'square'],
     [988, 0.76, 0.28, 0.44, 'square'], [784, 1.14, 0.28, 0.44, 'square'],
     [988, 1.52, 0.28, 0.44, 'square'], [784, 1.9, 0.6, 0.44, 'square'],
+  ],
+  // Soft and short: the task is still running past its time.
+  [LEVEL.reminder]: [[659, 0, 0.16, 0.2, 'sine'], [880, 0.2, 0.3, 0.18, 'sine']],
+};
+
+// Short answers to the user's own actions, quieter than any alert.
+export const FEEDBACK = {
+  // A small win: a bright two-note "coin".
+  done: [[988, 0, 0.08, 0.12, 'square'], [1319, 0.08, 0.32, 0.12, 'square']],
+  // A swap: three notes going down.
+  postpone: [[784, 0, 0.09, 0.15, 'triangle'], [622, 0.09, 0.09, 0.15, 'triangle'], [494, 0.18, 0.18, 0.13, 'triangle']],
+  // The routine is done: a rising arpeggio that lands on a chord, with a sparkle on top.
+  finish: [
+    [523, 0, 0.12, 0.13, 'triangle'], [659, 0.12, 0.12, 0.13, 'triangle'], [784, 0.24, 0.12, 0.13, 'triangle'],
+    [1047, 0.36, 0.7, 0.12, 'triangle'], [784, 0.36, 0.7, 0.07, 'triangle'], [659, 0.36, 0.7, 0.06, 'triangle'],
+    [1568, 0.5, 0.18, 0.05, 'sine'], [2093, 0.64, 0.3, 0.04, 'sine'],
   ],
 };
 
@@ -31,9 +48,8 @@ export function primeSounds() {
   try { ctx?.resume?.()?.catch?.(() => {}); } catch (_) {}
 }
 
-export function playSound(level) {
+function playTones(tones) {
   const ctx = audioContext();
-  const tones = TONES[level];
   if (!ctx || !tones) return;
   try {
     ctx.resume?.()?.catch?.(() => {});
@@ -41,12 +57,14 @@ export function playSound(level) {
     tones.forEach(([frequency, start, duration, gain, type]) => {
       const osc = ctx.createOscillator();
       const amp = ctx.createGain();
+      const attack = Math.min(0.02, duration / 4);
+      const release = Math.min(0.08, duration / 3);
       osc.type = type;
       osc.frequency.value = frequency;
       amp.gain.setValueAtTime(0.0001, t0 + start);
-      amp.gain.exponentialRampToValueAtTime(gain, t0 + start + 0.02);
+      amp.gain.exponentialRampToValueAtTime(gain, t0 + start + attack);
       // Hold the tone at full strength before releasing it; a long decay made alerts faint.
-      amp.gain.setValueAtTime(gain, t0 + start + duration - 0.08);
+      amp.gain.setValueAtTime(gain, t0 + start + duration - release);
       amp.gain.exponentialRampToValueAtTime(0.0001, t0 + start + duration);
       osc.connect(amp).connect(ctx.destination);
       osc.start(t0 + start);
@@ -54,3 +72,6 @@ export function playSound(level) {
     });
   } catch (_) { /* Playback is best effort. */ }
 }
+
+export const playSound = (level) => playTones(TONES[level]);
+export const playFeedback = (name) => playTones(FEEDBACK[name]);
