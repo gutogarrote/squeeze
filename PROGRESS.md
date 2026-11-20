@@ -57,6 +57,25 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-20 — Compartilhar, sons, fim da rotina e reordenação
+
+- Execução: botão de compartilhar (link da rotina como está; folha do sistema ou cópia); tarefas
+  reordenáveis segurando as duas linhas do card por 0,3 s e arrastando (`moveTask` no motor,
+  `hooks/useReorder`), com setas do teclado como alternativa.
+- Sons: lembrete suave depois que o tempo da tarefa acaba (a cada 2 min, 5 min ou nunca, nos
+  Ajustes; agendado também como alarme no Android); "plim" ao concluir, notas descendentes ao
+  adiar/mover, comemoração ao concluir a última tarefa. Todos seguem o interruptor de sons.
+- Fim: concluir a última tarefa abre a janela "Rotina concluída" (salvar alterações, recomeçar
+  com novo deadline, editar a rotina, encerrar sem salvar).
+- Cards mais proporcionais (minutos^0,56, 60 a 320 px); aviso "Squeeze! Faltam X min para caber
+  tudo."; título da rotina numa caixa com lápis no planejamento; − e + mudam 1 min até 10 min e
+  5 min a partir daí.
+- Instruções de links em modo escuro, com o prompt no topo e botão "Copiar prompt"; prompt revisto
+  para ser autossuficiente (regras de hífen, tabela de escapes, limites, tipos).
+- Verificação: lint sem avisos, 275 testes, build web e APK de debug; arrasto com pressão longa
+  por toque, janela de fim e página de instruções conferidos em Chromium com emulação de Pixel 7.
+  Não verificado em aparelho: volume dos novos sons e lembretes com a tela apagada.
+
 ### 2026-11-17 — Sons à vista e tamanho dos cards
 
 - Planejamento: interruptor "Sons" ao lado de Começar, mostrando Ligados/Desligados; é a mesma

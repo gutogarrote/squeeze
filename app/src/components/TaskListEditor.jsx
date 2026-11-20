@@ -5,6 +5,16 @@ import { normalizeTaskTypes, taskType } from '../lib/taskTypes';
 
 const clampMinutes = (m) => Math.min(LIMITS.taskMinutes, Math.max(1, Math.round(m) || 1));
 
+// The − and + buttons move 1 minute at a time up to 10 minutes and 5 at a time from there,
+// landing on multiples of 5 (12 → 15 with +, 12 → 10 with −).
+const STEP_LIMIT = 10;
+export function stepMinutes(minutes, direction) {
+  const m = clampMinutes(Number(minutes) || 0);
+  if (direction > 0) return clampMinutes(m < STEP_LIMIT ? m + 1 : (Math.floor(m / 5) + 1) * 5);
+  if (m <= STEP_LIMIT) return clampMinutes(m - 1);
+  return clampMinutes(Math.max(STEP_LIMIT, (Math.ceil(m / 5) - 1) * 5));
+}
+
 function IconButton({ label, onClick, disabled, children, className = '' }) {
   return (
     <button type="button" aria-label={label} title={label} onClick={onClick} disabled={disabled}
@@ -76,7 +86,7 @@ export default function TaskListEditor({ items, onChange, newMinutes = 15, buffe
                 <IconButton label={`Subir ${label}`} disabled={i === 0} onClick={() => move(i, -1)} className="text-sm">▲</IconButton>
                 <IconButton label={`Descer ${label}`} disabled={i === items.length - 1} onClick={() => move(i, 1)} className="text-sm">▼</IconButton>
                 <span className="flex-1" />
-                <IconButton label={`Menos 5 minutos em ${label}`} onClick={() => update(t.key, { minutes: clampMinutes(t.minutes - 5) })}>−</IconButton>
+                <IconButton label={`Menos minutos em ${label}`} disabled={clampMinutes(Number(t.minutes)) <= 1} onClick={() => update(t.key, { minutes: stepMinutes(t.minutes, -1) })}>−</IconButton>
                 <label className="flex items-baseline gap-1 tabular-nums">
                   <input
                     type="number"
@@ -91,7 +101,7 @@ export default function TaskListEditor({ items, onChange, newMinutes = 15, buffe
                   />
                   <span className="text-xs text-zinc-500">min</span>
                 </label>
-                <IconButton label={`Mais 5 minutos em ${label}`} onClick={() => update(t.key, { minutes: clampMinutes((Number(t.minutes) || 0) + 5) })}>+</IconButton>
+                <IconButton label={`Mais minutos em ${label}`} onClick={() => update(t.key, { minutes: stepMinutes(t.minutes, 1) })}>+</IconButton>
                 <IconButton label={`Remover ${label}`} onClick={() => remove(t.key)} className="ml-1 text-zinc-500 hover:text-rose-300">×</IconButton>
               </div>
             </li>

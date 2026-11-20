@@ -5,6 +5,7 @@ test('on the web there is no bridge and links use the page origin', () => {
   expect(isNative()).toBe(false);
   expect(nativeAlerts()).toBeNull();
   expect(shareOrigin()).toBe('http://localhost:3000/');
+  expect(shareOrigin(true)).toBe(PUBLIC_URL);
   expect(PUBLIC_URL).toMatch(/^https:\/\/.+\/$/);
   expect(installWakeLock()).toBe(false);
 });

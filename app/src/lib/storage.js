@@ -1,6 +1,7 @@
 // Local persistence (localStorage only). Every read validates and falls back safely.
 import { isClock } from './clock';
 import { LIMITS } from './routineLink';
+import { REMINDER_OPTIONS } from './alerts';
 import { normalizeTaskTypes, typeProps } from './taskTypes';
 
 export const KEYS = {
@@ -11,7 +12,8 @@ export const KEYS = {
 };
 
 export const REST_OPTIONS = [2, 5, 10, 0];
-export const DEFAULT_SETTINGS = { sound: true, restAfterMin: 2 };
+export { REMINDER_OPTIONS };
+export const DEFAULT_SETTINGS = { sound: true, restAfterMin: 2, reminderMin: 2 };
 
 export const EXAMPLE_PLAN = {
   name: 'Tarde',
@@ -95,6 +97,7 @@ export function loadSettings() {
   return {
     sound: typeof s.sound === 'boolean' ? s.sound : DEFAULT_SETTINGS.sound,
     restAfterMin: REST_OPTIONS.includes(s.restAfterMin) ? s.restAfterMin : DEFAULT_SETTINGS.restAfterMin,
+    reminderMin: REMINDER_OPTIONS.includes(s.reminderMin) ? s.reminderMin : DEFAULT_SETTINGS.reminderMin,
   };
 }
 export const saveSettings = (settings) => write(KEYS.settings, settings);

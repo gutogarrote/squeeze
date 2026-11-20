@@ -119,14 +119,21 @@ export default function PlanScreen({
         <Button variant="ghost" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
       </header>
 
-      <input
-        aria-label="Nome da rotina"
-        value={draft.name}
-        maxLength={80}
-        placeholder="Nome da rotina"
-        onChange={(e) => onChange({ ...draft, name: e.target.value })}
-        className="mt-6 w-full bg-transparent text-3xl font-semibold text-zinc-100 placeholder:text-zinc-700 focus:outline-none"
-      />
+      <label className="mt-6 flex items-center gap-3 rounded-2xl bg-zinc-900 px-4 py-3 ring-1 ring-white/15 transition focus-within:ring-2 focus-within:ring-lime-300/70 hover:ring-white/25">
+        <input
+          aria-label="Nome da rotina"
+          value={draft.name}
+          maxLength={80}
+          placeholder="Nome da rotina"
+          onChange={(e) => onChange({ ...draft, name: e.target.value })}
+          className="min-w-0 flex-1 bg-transparent text-2xl font-semibold text-zinc-100 placeholder:text-zinc-600 focus:outline-none"
+        />
+        {/* Pencil: the title is a field, tap to rename. */}
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-zinc-500" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+          <path d="M13.5 6.5l4 4" />
+        </svg>
+      </label>
 
       <section className="mt-5 rounded-3xl bg-zinc-900/80 p-5 ring-1 ring-white/5">
         <Hero draft={draft} now={now} />

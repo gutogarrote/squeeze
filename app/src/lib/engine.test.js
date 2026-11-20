@@ -1,5 +1,5 @@
 import {
-  MIN_MS, addTimeToCurrent, applyEdit, completeTask, extendDeadline, planSummary, postponeTask,
+  MIN_MS, addTimeToCurrent, applyEdit, completeTask, extendDeadline, moveTask, planSummary, postponeTask,
   reactivateTask, releaseBuffer, setDeadline, startRun, viewRun, claimOf, finishFromNow,
 } from './engine';
 
@@ -348,5 +348,47 @@ describe('finishFromNow', () => {
     expect(finishFromNow([{ estimateMs: 30 * MIN_MS }, { estimateMs: 20 * MIN_MS, consumedMs: 5 * MIN_MS }], at(14))).toBe(at(14, 45));
     expect(finishFromNow([{ estimateMs: 30 * MIN_MS, consumedMs: 40 * MIN_MS }], at(14))).toBe(at(14));
     expect(finishFromNow([{ estimateMs: 10 * MIN_MS }], at(14, 0, 20))).toBe(at(14, 11));
+  });
+});
+
+describe('reordering by dragging', () => {
+  const ABCD = [...ABC, { name: 'D', minutes: 20 }];
+  test('a task moves to any pending position, keeping every remaining time', () => {
+    let run = startRun(plan(ABCD, at(16, 20)), at(14));
+    const before = remaining(viewRun(run, at(14, 10)));
+    run = moveTask(run, idOf(run, 'D'), 1, at(14, 10));
+    let v = viewRun(run, at(14, 10));
+    expect(v.tasks.map((t) => t.name)).toEqual(['A', 'D', 'B', 'C']);
+    expect(remaining(v)).toEqual(before);
+    expect(v.current.name).toBe('A');
+    expectInvariant(run, at(14, 10));
+    // Moving above the current task makes it the current one.
+    run = moveTask(run, idOf(run, 'C'), 0, at(14, 12));
+    v = viewRun(run, at(14, 12));
+    expect(v.current.name).toBe('C');
+    expect(run.currentSinceMs).toBe(at(14, 12));
+    expect(v.tasks.find((t) => t.name === 'A').consumedMs).toBe(12 * MIN_MS);
+    expectInvariant(run, at(14, 12));
+  });
+
+  test('completed tasks stay in place and only pending positions count', () => {
+    let run = startRun(plan(ABCD, at(16, 20)), at(14));
+    run = completeTask(run, idOf(run, 'A'), at(14, 20));
+    run = moveTask(run, idOf(run, 'D'), 0, at(14, 25));
+    const v = viewRun(run, at(14, 25));
+    expect(v.tasks.map((t) => t.name)).toEqual(['A', 'D', 'B', 'C']);
+    expect(v.current.name).toBe('D');
+    expect(v.tasks[0].status).toBe('done');
+  });
+
+  test('the same place, unknown tasks and completed tasks change nothing; targets are clamped', () => {
+    let run = startRun(plan(ABCD, at(16, 20)), at(14));
+    expect(moveTask(run, idOf(run, 'B'), 1, at(14, 5))).toBe(run);
+    expect(moveTask(run, 'nope', 0, at(14, 5))).toBe(run);
+    expect(moveTask(run, idOf(run, 'B'), NaN, at(14, 5))).toBe(run);
+    run = moveTask(run, idOf(run, 'A'), 99, at(14, 5));
+    expect(viewRun(run, at(14, 5)).tasks.map((t) => t.name)).toEqual(['B', 'C', 'D', 'A']);
+    run = completeTask(run, idOf(run, 'B'), at(14, 6));
+    expect(moveTask(run, idOf(run, 'B'), 2, at(14, 7))).toBe(run);
   });
 });

@@ -84,3 +84,32 @@ test('browsers without Web Audio can still start routines', async () => {
   expect(() => primeSounds()).not.toThrow();
   expect(() => playSound(LEVEL.zero)).not.toThrow();
 });
+
+test('the overrun reminder and the feedback tones are short and quieter than the alerts', async () => {
+  const { playSound, playFeedback, FEEDBACK, TONES } = await import('./sound');
+  const loudest = (tones) => Math.max(...tones.map((tone) => tone[3]));
+  const length = (tones) => Math.max(...tones.map(([, start, duration]) => start + duration));
+  const quietestAlert = Math.min(...[LEVEL.five, LEVEL.one, LEVEL.zero].map((level) => loudest(TONES[level])));
+  [TONES[LEVEL.reminder], FEEDBACK.done, FEEDBACK.postpone].forEach((tones) => {
+    expect(loudest(tones)).toBeLessThan(quietestAlert);
+    expect(length(tones)).toBeLessThan(0.6);
+  });
+  expect(loudest(FEEDBACK.finish)).toBeLessThan(quietestAlert);
+  expect(length(FEEDBACK.finish)).toBeLessThan(1.2);
+  // Postponing goes down; completing goes up.
+  const pitches = (tones) => tones.map((tone) => tone[0]);
+  expect(pitches(FEEDBACK.postpone)).toEqual([...pitches(FEEDBACK.postpone)].sort((a, b) => b - a));
+  expect(pitches(FEEDBACK.done)[1]).toBeGreaterThan(pitches(FEEDBACK.done)[0]);
+  playSound(LEVEL.reminder);
+  expect(oscillators).toHaveLength(2);
+  playFeedback('finish');
+  expect(oscillators).toHaveLength(2 + FEEDBACK.finish.length);
+  // Very short notes keep their envelope events in order.
+  envelopes.forEach((amp) => {
+    const times = [...amp.gain.setValueAtTime.mock.calls, ...amp.gain.exponentialRampToValueAtTime.mock.calls].map((call) => call[1]);
+    const [start, attackEnd] = [amp.gain.setValueAtTime.mock.calls[0][1], amp.gain.exponentialRampToValueAtTime.mock.calls[0][1]];
+    expect(amp.gain.setValueAtTime.mock.calls[1][1]).toBeGreaterThanOrEqual(attackEnd);
+    expect(Math.min(...times)).toBe(start);
+  });
+  expect(() => playFeedback('unknown')).not.toThrow();
+});

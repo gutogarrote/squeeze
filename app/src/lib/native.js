@@ -14,7 +14,7 @@ export function nativeAlerts() {
   return plugin;
 }
 
-export const shareOrigin = () => (isNative() ? PUBLIC_URL : `${window.location.origin}/`);
+export const shareOrigin = (native = isNative()) => (native ? PUBLIC_URL : `${window.location.origin}/`);
 
 // Web views without the Screen Wake Lock API get it from the native window flag, so
 // useScreenWakeLock works unchanged.

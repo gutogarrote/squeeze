@@ -30,3 +30,18 @@ test('with sounds off nothing plays, but the rest screen still wakes', () => {
   expect(play).not.toHaveBeenCalled();
   expect(onAlert).toHaveBeenCalledWith(LEVEL.five);
 });
+
+test('a task running over plays a soft reminder every interval', () => {
+  const play = vi.fn();
+  const { rerender } = renderHook(({ v }) => useAlerts(v, { enabled: true, play, reminderMs: 2 * M }), {
+    initialProps: { v: view('a', 30000) },
+  });
+  rerender({ v: view('a', 0) });
+  expect(play).toHaveBeenLastCalledWith(LEVEL.zero);
+  rerender({ v: view('a', -M) });
+  rerender({ v: view('a', -2 * M) });
+  expect(play).toHaveBeenLastCalledWith(LEVEL.reminder);
+  rerender({ v: view('a', -3 * M) });
+  rerender({ v: view('a', -4 * M) });
+  expect(play.mock.calls.filter(([level]) => level === LEVEL.reminder)).toHaveLength(2);
+});

@@ -158,7 +158,7 @@ describe('planning', () => {
 
   test('editing tasks and deadline recalculates the ideal start and persists the draft', () => {
     render(<App clock={clock} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mais 5 minutos em Orçamento' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais minutos em Orçamento' }));
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('12:30');
     fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '16:00' } });
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('13:30');
@@ -280,7 +280,7 @@ describe('finish if started now', () => {
     const preview = screen.getByRole('region', { name: 'Término começando agora' });
     expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:45');
     expect(preview).toHaveTextContent('sobra 15 min antes do deadline');
-    fireEvent.click(screen.getByRole('button', { name: 'Mais 5 minutos em Almoço' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais minutos em Almoço' }));
     expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:50');
     fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '14:00' } });
     expect(preview).toHaveTextContent('passa 50 min do deadline');
@@ -381,7 +381,7 @@ describe('running', () => {
     expect(card('Folga')).toHaveTextContent('+5 min');
     advance(10 * MIN);
     expect(screen.queryByRole('group', { name: 'Folga' })).not.toBeInTheDocument();
-    expect(screen.getByText(/Faltam 5 min para caber tudo/)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Squeeze! Faltam 5 min para caber tudo.');
   });
 
   test('+5 min appears at 5 minutes and adds time to the current task', () => {
@@ -598,8 +598,8 @@ describe('sounds before starting', () => {
     expect(toggle).toHaveTextContent('Desligados');
     expect(JSON.parse(localStorage.getItem(KEYS.settings)).sound).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
-    expect(screen.getByRole('switch', { name: /^Sons\s*Toques/ })).not.toBeChecked();
-    fireEvent.click(screen.getByRole('switch', { name: /^Sons\s*Toques/ }));
+    expect(screen.getByRole('switch', { name: /^Sons\s*Alertas/ })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('switch', { name: /^Sons\s*Alertas/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(screen.getByRole('switch', { name: 'Sons dos alertas' })).toBeChecked();
   });
@@ -624,8 +624,8 @@ describe('card sizes', () => {
     ] }));
     nowMs = local(12, 54);
     startExample();
-    expect(heightOf('Próxima: Longa')).toBeGreaterThan(heightOf('Próxima: Curta') * 2);
-    expect(heightOf('Próxima: Longa')).toBeLessThan(heightOf('Próxima: Curta') * 3);
+    expect(heightOf('Próxima: Longa')).toBeGreaterThan(heightOf('Próxima: Curta') * 3);
+    expect(heightOf('Próxima: Longa')).toBeLessThan(heightOf('Próxima: Curta') * 4);
     expect(heightOf('Próxima: Mínima')).toBe(60);
     expect(heightOf('Próxima: Curta')).toBeGreaterThan(60);
   });
@@ -638,5 +638,191 @@ describe('card sizes', () => {
     swipe(card('Tarefa atual: Guardar equipamentos'), -150);
     expect(heightOf('Concluída: Orçamento')).toBeGreaterThan(heightOf('Concluída: Guardar equipamentos') * 2);
     expect(heightOf('Concluída: Guardar equipamentos')).toBeGreaterThanOrEqual(60);
+  });
+});
+
+describe('sounds for gestures and the end of the routine', () => {
+  const short = () => {
+    localStorage.setItem(KEYS.draft, JSON.stringify({ name: 'Curta', deadline: '13:00', tasks: [
+      { id: 'a', name: 'Um', minutes: 10 }, { id: 'b', name: 'Dois', minutes: 10 }, { id: 'c', name: 'Três', minutes: 10 },
+    ] }));
+  };
+
+  test('completing plays a small win, postponing a swap, the last one celebrates and opens the end', () => {
+    short();
+    const feedback = vi.fn();
+    render(<App clock={clock} feedback={feedback} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    swipe(card('Tarefa atual: Um'), -150);
+    expect(feedback).toHaveBeenLastCalledWith('done');
+    swipe(card('Tarefa atual: Dois'), 150);
+    expect(feedback).toHaveBeenLastCalledWith('postpone');
+    swipe(card('Tarefa atual: Três'), -150);
+    expect(feedback).toHaveBeenLastCalledWith('done');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    swipe(card('Tarefa atual: Dois'), -150);
+    expect(feedback).toHaveBeenLastCalledWith('finish');
+    const dialog = screen.getByRole('dialog', { name: 'Rotina concluída' });
+    expect(dialog).toHaveTextContent('3 tarefas');
+    expect(dialog).toHaveTextContent('antes do deadline');
+    // A gesture that changes nothing makes no sound.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Fechar' }));
+    feedback.mockClear();
+    swipe(card('Concluída: Um'), -150);
+    expect(feedback).not.toHaveBeenCalled();
+  });
+
+  test('with sounds off the gestures are silent', () => {
+    short();
+    localStorage.setItem(KEYS.settings, JSON.stringify({ sound: false, restAfterMin: 2, reminderMin: 2 }));
+    const feedback = vi.fn();
+    render(<App clock={clock} feedback={feedback} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    swipe(card('Tarefa atual: Um'), -150);
+    swipe(card('Tarefa atual: Dois'), 150);
+    expect(feedback).not.toHaveBeenCalled();
+  });
+
+  test('the end window saves the routine as run, restarts it, edits it or just ends', () => {
+    short();
+    const finish = () => ['Um', 'Dois', 'Três'].forEach((name) => swipe(card(`Tarefa atual: ${name}`), -150));
+    const { unmount } = render(<App clock={clock} feedback={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    finish();
+    // Closing keeps the finished timeline; its button brings the window back.
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Fechar' }));
+    expect(screen.getByText('Tudo feito!')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar rotina' }));
+    // Editing continues the run with new tasks.
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Rotina concluída' })).getByRole('button', { name: 'Editar a rotina' }));
+    expect(screen.getByRole('dialog', { name: 'Editar rotina' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar como rotina' }));
+    expect(JSON.parse(localStorage.getItem(KEYS.templates)).map((t) => t.name)).toEqual(['Curta']);
+    expect(screen.getByRole('button', { name: 'Começar' })).toBeInTheDocument();
+    unmount();
+
+    render(<App clock={clock} feedback={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    finish();
+    fireEvent.click(screen.getByRole('button', { name: 'Recomeçar com novo deadline' }));
+    expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Um');
+    expect(localStorage.getItem(KEYS.run)).toBeNull();
+  });
+});
+
+describe('sharing during the routine', () => {
+  afterEach(() => { delete navigator.share; });
+  // Lets the share promise chain settle.
+  const flush = async () => { for (let i = 0; i < 5; i += 1) await Promise.resolve(); };
+  const shareRun = async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar rotina' }));
+    await act(flush);
+  };
+
+  test('opens the system share sheet with the routine as it stands', async () => {
+    navigator.share = vi.fn(() => Promise.resolve());
+    startExample();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nome da tarefa 5' }), { target: { value: 'Sair de casa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await shareRun();
+    const { title, url } = navigator.share.mock.calls[0][0];
+    expect(title).toBe('Tarde — Squeeze');
+    expect(url).toMatch(/^http:\/\/localhost:3000\/\?rotina=3\.1500\.Or%C3%A7amento-60\./);
+    expect(decodeURIComponent(url)).toContain('Sair_de_casa-20');
+  });
+
+  test('without a share sheet the link is copied; a cancelled share does nothing', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    startExample();
+    await shareRun();
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('rotina=3.1500.'));
+    expect(screen.getByRole('status')).toHaveTextContent('Link copiado.');
+    navigator.share = vi.fn(() => Promise.reject(Object.assign(new Error('cancel'), { name: 'AbortError' })));
+    writeText.mockClear();
+    await shareRun();
+    expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe('reordering during the routine', () => {
+  // jsdom has no layout: each list item is 100 px tall, in order.
+  beforeEach(() => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rect() {
+      const id = this.dataset?.motionId;
+      if (!id) return { top: 0, left: 0, width: 300, height: 0, bottom: 0, right: 300 };
+      // eslint-disable-next-line testing-library/no-node-access -- stands in for layout: an item's place follows its order
+      const items = [...this.parentElement.children];
+      const top = items.indexOf(this) * 108;
+      return { top, left: 0, width: 300, height: 100, bottom: top + 100, right: 300 };
+    });
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  const handle = (name) => screen.getByRole('button', { name: `Mover ${name}` });
+  const press = (name, y = 50) => fireEvent.pointerDown(handle(name), { clientX: 280, clientY: y, pointerId: 2, button: 0 });
+
+  test('hold the handle, then drag: the card moves and keeps its time', () => {
+    const feedback = vi.fn();
+    render(<App clock={clock} feedback={feedback} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    const before = card('Próxima: Almoço').textContent;
+    press('Almoço', 350);
+    act(() => { vi.advanceTimersByTime(350); });
+    fireEvent.pointerMove(handle('Almoço'), { clientX: 280, clientY: 100, pointerId: 2 });
+    fireEvent.pointerUp(handle('Almoço'), { clientX: 280, clientY: 100, pointerId: 2 });
+    expect(taskNames().slice(0, 3)).toEqual(['Tarefa atual: Orçamento', 'Próxima: Almoço', 'Próxima: Guardar equipamentos']);
+    expect(card('Próxima: Almoço').textContent.split(' ')[0]).toBe(before.split(' ')[0]);
+    expect(feedback).toHaveBeenLastCalledWith('postpone');
+    // Above the current task it becomes the current one.
+    press('Almoço', 150);
+    act(() => { vi.advanceTimersByTime(350); });
+    fireEvent.pointerMove(handle('Almoço'), { clientX: 280, clientY: 10, pointerId: 2 });
+    fireEvent.pointerUp(handle('Almoço'), { clientX: 280, clientY: 10, pointerId: 2 });
+    expect(card('Tarefa atual: Almoço')).toBeInTheDocument();
+  });
+
+  test('a quick drag without holding, a tap or a cancelled gesture moves nothing', () => {
+    startExample();
+    const order = taskNames();
+    press('Almoço', 350);
+    fireEvent.pointerMove(handle('Almoço'), { clientX: 280, clientY: 100, pointerId: 2 });
+    act(() => { vi.advanceTimersByTime(500); });
+    fireEvent.pointerUp(handle('Almoço'), { clientX: 280, clientY: 100, pointerId: 2 });
+    press('Almoço', 350);
+    fireEvent.pointerUp(handle('Almoço'), { clientX: 280, clientY: 350, pointerId: 2 });
+    press('Almoço', 350);
+    act(() => { vi.advanceTimersByTime(350); });
+    fireEvent.pointerMove(handle('Almoço'), { clientX: 280, clientY: 10, pointerId: 2 });
+    fireEvent.pointerCancel(handle('Almoço'), { pointerId: 2 });
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(taskNames()).toEqual(order);
+  });
+
+  test('the arrow keys move a task one place; a single pending task has no handle', () => {
+    startExample();
+    fireEvent.keyDown(handle('Orçamento'), { key: 'ArrowDown' });
+    expect(card('Tarefa atual: Guardar equipamentos')).toBeInTheDocument();
+    const order = taskNames();
+    fireEvent.keyDown(handle('Preparar saída'), { key: 'ArrowDown' });
+    fireEvent.keyDown(handle('Guardar equipamentos'), { key: 'ArrowUp' });
+    fireEvent.keyDown(handle('Almoço'), { key: 'Enter' });
+    expect(taskNames()).toEqual(order);
+    ['Guardar equipamentos', 'Orçamento', 'Banho e troca de roupa', 'Almoço'].forEach((name) => swipe(card(`Tarefa atual: ${name}`), -150));
+    expect(screen.queryByRole('button', { name: /^Mover / })).not.toBeInTheDocument();
+  });
+});
+
+describe('overrun reminder setting', () => {
+  test('can be set to every 5 minutes or never', () => {
+    render(<App clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+    const select = screen.getByRole('combobox', { name: 'Lembrete depois do tempo' });
+    expect(select).toHaveValue('2');
+    fireEvent.change(select, { target: { value: '0' } });
+    expect(JSON.parse(localStorage.getItem(KEYS.settings)).reminderMin).toBe(0);
   });
 });

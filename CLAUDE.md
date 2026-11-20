@@ -16,14 +16,15 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
   Uma operação sem efeito devolve o mesmo objeto (a UI usa isso para o card "balançar").
 - `lib/split.js` (divisão proporcional exata), `lib/clock.js` (próxima ocorrência do deadline, formatos),
   `lib/routineLink.js` (link v3, ver `docs/url-rotina-v3.md`), `lib/storage.js` (localStorage validado),
-  `lib/alerts.js` + `lib/sound.js` (limites dos alertas e toques sintetizados com Web Audio),
+  `lib/alerts.js` + `lib/sound.js` (limites e lembretes dos alertas, sons dos gestos e do fim, sintetizados com Web Audio),
   `lib/cardSize.js` (altura dos cards pela raiz quadrada dos minutos, specifications.md §12).
 - `App.jsx`: estado (rascunho, rotinas salvas, execução, ajustes), importação de links, encerramento.
 - `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
-  `TaskListEditor`, `RunEditor`, `EndSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
+  `TaskListEditor`, `RunEditor`, `EndSheet`, `FinishedSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
 - `hooks/`: `useNow` (relógio de 1 s), `useAlerts`, `useRestMode`, `useScreenWakeLock`.
 - `hooks/useListMotion` anima a lista da execução (FLIP): o card concluído sai voando, o adiado
   viaja até o novo lugar; `SwipeCard` cuida do arrasto (painel de ação, resistência, flick, háptico).
+  `hooks/useReorder` reordena segurando as duas linhas do card (pressão longa) e arrastando.
 - `lib/native.js`, `lib/nativeAlerts.js`, `hooks/useNativeAlerts`: ponte com o app Android (abaixo).
 - `pwa/` e `instructions/`: service worker gerado no build e página `/instrucoes` a partir do doc v3.
 

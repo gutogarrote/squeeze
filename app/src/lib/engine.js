@@ -200,6 +200,24 @@ export function postponeTask(run, id, nowMs) {
   return r;
 }
 
+// Drag to reorder: a pending task (not the buffer) goes to position `to` among the pending
+// tasks, keeping its time like a postponement; completed tasks stay where they are. Whatever
+// ends up first becomes the current task. A move to the same place returns the same run.
+export function moveTask(run, id, to, nowMs) {
+  const slots = pendingIndexes(run).filter((i) => taskType(run.tasks[i]) !== 'buffer');
+  const from = slots.findIndex((i) => run.tasks[i].id === id);
+  const target = Math.max(0, Math.min(slots.length - 1, Math.round(Number(to))));
+  if (from < 0 || !Number.isFinite(target) || target === from) return run;
+  const r = commit(clone(run), nowMs);
+  const previous = currentTask(r)?.id;
+  const order = slots.map((i) => r.tasks[i]);
+  const [t] = order.splice(from, 1);
+  order.splice(target, 0, t);
+  slots.forEach((slot, k) => { r.tasks[slot] = order[k]; });
+  activate(r, nowMs, previous);
+  return r;
+}
+
 // Swipe right on a done task: it becomes the current one again with the time it had left
 // when it was completed; the previous current task becomes the next one.
 export function reactivateTask(run, id, nowMs) {

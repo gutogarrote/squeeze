@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { LEVEL, nextAlert } from '../lib/alerts';
 import { playSound } from '../lib/sound';
 
-// Plays the current task's alerts (specifications.md §10). `onAlert` runs whenever a sound
-// would play (even muted), so the rest screen can wake up.
-export default function useAlerts(view, { enabled, onAlert, play = playSound }) {
+// Plays the current task's alerts (specifications.md §10), and a soft reminder every
+// `reminderMs` after its time runs out. `onAlert` runs whenever a sound would play (even
+// muted), so the rest screen can wake up.
+export default function useAlerts(view, { enabled, onAlert, play = playSound, reminderMs = 0 }) {
   const state = useRef(null);
   const first = useRef(true);
   const current = view?.current;
@@ -13,12 +14,12 @@ export default function useAlerts(view, { enabled, onAlert, play = playSound }) 
 
   useEffect(() => {
     if (!key) { state.current = null; return; }
-    const out = nextAlert(state.current, key, remaining, { silent: first.current });
+    const out = nextAlert(state.current, key, remaining, { silent: first.current, reminderMs });
     first.current = false;
     state.current = out.state;
     if (out.play !== LEVEL.none) {
       if (enabled) play(out.play);
       onAlert?.(out.play);
     }
-  }, [key, remaining, enabled, onAlert, play]);
+  }, [key, remaining, enabled, onAlert, play, reminderMs]);
 }
