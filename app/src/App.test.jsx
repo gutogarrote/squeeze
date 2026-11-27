@@ -42,13 +42,13 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 function startExample() {
-  render(<App clock={clock} />);
+  render(<App home="plan" clock={clock} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
 }
 
 describe('planning', () => {
   test('fixed and buffer selectors are exclusive, allow multiple fixed tasks and only one buffer', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Fixo: Orçamento' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Fixo: Guardar equipamentos' }));
     expect(screen.getByRole('checkbox', { name: 'Fixo: Orçamento' })).toBeChecked();
@@ -73,7 +73,7 @@ describe('planning', () => {
       { id: 'a', name: 'A', minutes: 10 }, { id: 'f', name: 'Fixa', minutes: 20, type: 'fixed' },
       { id: 'b', name: 'B', minutes: 30 }, { id: 'r', name: 'Reserva', minutes: 10, type: 'buffer' },
     ] }));
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     advance(25 * MIN);
     expect(card('Próxima: Fixa')).toHaveTextContent('20 min');
@@ -81,7 +81,7 @@ describe('planning', () => {
     expect(card('Reserva')).toHaveTextContent('0 min');
     expect(screen.queryByRole('group', { name: 'Folga', exact: true })).not.toBeInTheDocument();
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     const dialog = screen.getByRole('dialog', { name: 'Editar rotina' });
     expect(within(dialog).getByRole('checkbox', { name: 'Fixo: Fixa' })).toBeChecked();
@@ -102,12 +102,13 @@ describe('planning', () => {
       tasks: [{ id: `task-${i}`, name: `Tarefa ${i}`, minutes: 10 }],
     }));
     localStorage.setItem(KEYS.templates, JSON.stringify(templates));
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Abrir Tarde' }));
     fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Edição pendente' } });
     const draft = localStorage.getItem(KEYS.draft);
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Ordenar rotinas' }), { target: { value: 'manual' } });
     const names = () => within(screen.getByRole('list', { name: 'Rotinas salvas' }))
       .getAllByRole('button', { name: /^Abrir / }).map((b) => b.getAttribute('aria-label'));
     expect(screen.getByRole('button', { name: 'Subir rotina Manhã' })).toBeDisabled();
@@ -119,10 +120,10 @@ describe('planning', () => {
     expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([templates[1], templates[2], templates[0]]);
     expect(localStorage.getItem(KEYS.draft)).toBe(draft);
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
     expect(names()).toEqual(['Abrir Tarde', 'Abrir Noite', 'Abrir Manhã']);
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Continuar editando/ }));
     expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Edição pendente');
   });
 
@@ -132,8 +133,9 @@ describe('planning', () => {
       tasks: [{ id: `task-${minutes}`, name: 'Ler', minutes }],
     }));
     localStorage.setItem(KEYS.templates, JSON.stringify(templates));
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Ordenar rotinas' }), { target: { value: 'manual' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Descer rotina Mesmo nome' })[0]);
     expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([templates[1], templates[0]]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Excluir Mesmo nome' })[0]);
@@ -143,7 +145,7 @@ describe('planning', () => {
   });
 
   test('shows the ideal start, the total and the buffer of starting now', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('12:35');
     expect(screen.getByText('2h 25')).toBeInTheDocument();
     expect(screen.getByText(/\+15 min de folga/)).toBeInTheDocument();
@@ -151,13 +153,13 @@ describe('planning', () => {
 
   test('when the ideal start passed it shows the delay and the compression', () => {
     nowMs = local(13, 0);
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByText('Deveria ter começado às')).toBeInTheDocument();
     expect(screen.getByText(/Atrasado 25 min/)).toHaveTextContent('as tarefas ficam com 82% da estimativa');
   });
 
   test('editing tasks and deadline recalculates the ideal start and persists the draft', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Mais minutos em Orçamento' }));
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('12:30');
     fireEvent.change(screen.getByLabelText('Deadline'), { target: { value: '16:00' } });
@@ -170,7 +172,7 @@ describe('planning', () => {
   });
 
   test('saved routines can be opened again', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
     fireEvent.click(screen.getByRole('button', { name: 'Nova rotina' }));
@@ -182,13 +184,13 @@ describe('planning', () => {
   });
 
   test('the editable deadline follows all tasks in the planner', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByRole('button', { name: '+ Adicionar tarefa' }).compareDocumentPosition(screen.getByLabelText('Deadline')))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   test('save as asks for a name and preserves the original routine', () => {
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     const [original] = JSON.parse(localStorage.getItem(KEYS.templates));
     fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Novo orçamento' } });
@@ -206,7 +208,7 @@ describe('planning', () => {
     expect(templates[1].tasks[0].name).toBe('Novo orçamento');
     expect(JSON.parse(localStorage.getItem(KEYS.draft)).templateId).toBe(templates[1].id);
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Tarde de sexta');
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
     expect(screen.getByRole('button', { name: 'Abrir Tarde' })).toBeInTheDocument();
@@ -214,7 +216,7 @@ describe('planning', () => {
   });
 
   test('save as rejects a blank name and cancel leaves the routines unchanged', async () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     const original = localStorage.getItem(KEYS.templates);
     await userEvent.click(screen.getByRole('button', { name: 'Salvar como…' }));
@@ -229,7 +231,7 @@ describe('planning', () => {
   });
 
   test('renaming a saved routine preserves its identity and does not save pending task edits', () => {
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     const [original] = JSON.parse(localStorage.getItem(KEYS.templates));
     fireEvent.change(screen.getByLabelText('Nome da tarefa 1'), { target: { value: 'Rascunho pendente' } });
@@ -240,11 +242,11 @@ describe('planning', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Renomear' }));
     expect(screen.getByRole('button', { name: 'Abrir Trabalho' })).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(KEYS.templates))).toEqual([{ ...original, name: 'Trabalho' }]);
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Continuar editando/ }));
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Trabalho');
     expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Rascunho pendente');
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Trabalho');
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
     fireEvent.click(screen.getByRole('button', { name: 'Abrir Trabalho' }));
@@ -252,7 +254,7 @@ describe('planning', () => {
   });
 
   test('renaming another saved routine and cancelling a rename leave the open draft alone', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
     fireEvent.click(screen.getByRole('button', { name: 'Nova rotina' }));
@@ -267,16 +269,15 @@ describe('planning', () => {
     dialog = screen.getByRole('dialog', { name: 'Renomear rotina' });
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Nome da rotina' }), { target: { value: 'Trabalho' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Renomear' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
-    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Outro rascunho');
-    expect(screen.queryByLabelText('Nome da tarefa 1')).not.toBeInTheDocument();
+    // An empty draft has nothing to continue: a new routine starts from scratch.
+    expect(screen.queryByRole('button', { name: /^Continuar editando/ })).not.toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Trabalho');
   });
 });
 
 describe('finish if started now', () => {
   test('the planner shows when the routine would end and can use it as the deadline', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     const preview = screen.getByRole('region', { name: 'Término começando agora' });
     expect(within(preview).getByTestId('finish-time')).toHaveTextContent('14:45');
     expect(preview).toHaveTextContent('sobra 15 min antes do deadline');
@@ -293,7 +294,7 @@ describe('finish if started now', () => {
 
   test('past midnight it shows only the time, and the deadline becomes the next day', () => {
     nowMs = local(23, 12);
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Remover Orçamento' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remover Preparar saída' }));
     fireEvent.change(screen.getByLabelText('Minutos de Almoço'), { target: { value: '28' } });
@@ -411,11 +412,11 @@ describe('running', () => {
   });
 
   test('the run is restored from storage with the elapsed time counted', () => {
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     unmount();
     nowMs += 20 * MIN;
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(card('Tarefa atual: Orçamento')).toHaveTextContent('40:00');
   });
 
@@ -423,7 +424,7 @@ describe('running', () => {
     startExample();
     document.body.innerHTML = '';
     nowMs = local(15) + 12 * 60 * MIN;
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByRole('button', { name: 'Começar' })).toBeInTheDocument();
     expect(screen.getByText(/encerrada automaticamente/)).toBeInTheDocument();
     expect(localStorage.getItem(KEYS.run)).toBeNull();
@@ -465,7 +466,7 @@ describe('timeline card and actions', () => {
 
 describe('edit mode and ending', () => {
   test('editing the run name persists it and updates the template only when requested at the end', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     advance(MIN);
@@ -480,8 +481,9 @@ describe('edit mode and ending', () => {
     expect(JSON.parse(localStorage.getItem(KEYS.run)).name).toBe('Tarde de trabalho');
     expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Tarde');
     fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Encerrar e atualizar a rotina salva' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações na rotina' }));
     expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Tarde de trabalho');
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Tarde de trabalho' }));
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Tarde de trabalho');
   });
 
@@ -497,7 +499,7 @@ describe('edit mode and ending', () => {
   });
 
   test('ending can update the saved routine without touching it otherwise', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
@@ -506,10 +508,39 @@ describe('edit mode and ending', () => {
     let templates = JSON.parse(localStorage.getItem(KEYS.templates));
     expect(templates[0].tasks.map((t) => t.name)).toContain('Almoço');
     fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Encerrar e atualizar a rotina salva' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações na rotina' }));
     templates = JSON.parse(localStorage.getItem(KEYS.templates));
     expect(templates[0].tasks.map((t) => t.name)).not.toContain('Almoço');
-    expect(screen.getByRole('button', { name: 'Começar' })).toBeInTheDocument();
+    // Ending goes back to the routines.
+    expect(screen.getByRole('button', { name: 'Nova rotina' })).toBeInTheDocument();
+  });
+
+  test('the end window offers saving only when a saved routine changed, in the requested order', () => {
+    render(<App home="plan" clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
+    let dialog = screen.getByRole('dialog', { name: 'Encerrar rotina' });
+    // A routine that was never saved has nothing to update.
+    expect(within(dialog).getAllByRole('button').map((b) => b.textContent))
+      .toEqual(['×', 'Encerrar', 'Recomeçar com novo deadline', 'Editar rotina']);
+    expect(dialog).toHaveTextContent('0 de 5 tarefas feitas');
+    expect(dialog).not.toHaveTextContent('Tudo feito!');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Encerrar' }));
+    // A saved routine that only ran, unchanged, has nothing to update either.
+    fireEvent.click(screen.getByRole('button', { name: /^Continuar editando/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    swipe(card('Tarefa atual: Orçamento'), -150);
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
+    dialog = screen.getByRole('dialog', { name: 'Encerrar rotina' });
+    expect(within(dialog).queryByRole('button', { name: 'Salvar alterações na rotina' })).not.toBeInTheDocument();
+    // Editing a task's minutes is a change.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Editar rotina' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mais minutos em Almoço' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
+    dialog = screen.getByRole('dialog', { name: 'Encerrar rotina' });
+    expect(within(dialog).getAllByRole('button').map((b) => b.textContent).at(-1)).toBe('Salvar alterações na rotina');
   });
 
   test('restart keeps the tasks and asks only for a new deadline', () => {
@@ -527,12 +558,12 @@ describe('links', () => {
 
   test('an unnamed imported routine saves and reopens with its deadline in the name', () => {
     window.history.replaceState(null, '', '/?rotina=3.2030.Ler-30');
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Rotina fim 20:30');
     fireEvent.click(screen.getByRole('button', { name: 'Salvar rotina' }));
     expect(JSON.parse(localStorage.getItem(KEYS.templates))[0].name).toBe('Rotina fim 20:30');
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rotinas', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Abrir Rotina fim 20:30' }));
     expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Rotina fim 20:30');
@@ -540,7 +571,7 @@ describe('links', () => {
 
   test('a valid link opens in the planner and leaves the address bar', () => {
     window.history.replaceState(null, '', link);
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByDisplayValue('Noite')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Jantar')).toBeInTheDocument();
     expect(screen.getByTestId('ideal-start')).toHaveTextContent('16:50');
@@ -552,7 +583,7 @@ describe('links', () => {
     startExample();
     document.body.innerHTML = '';
     window.history.replaceState(null, '', link);
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByRole('dialog', { name: 'Abrir rotina do link?' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Substituir' }));
     expect(screen.getByDisplayValue('Noite')).toBeInTheDocument();
@@ -560,7 +591,7 @@ describe('links', () => {
 
   test('an invalid link changes nothing and says so', () => {
     window.history.replaceState(null, '', '/?rotina=3.9999.X-1');
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByText(/Não foi possível abrir a rotina do link/)).toBeInTheDocument();
     expect(screen.getByDisplayValue('Tarde')).toBeInTheDocument();
   });
@@ -589,7 +620,7 @@ describe('rest screen', () => {
 
 describe('sounds before starting', () => {
   test('the planner shows whether sounds are on and switches them, in step with the settings', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     const toggle = screen.getByRole('switch', { name: 'Sons dos alertas' });
     expect(toggle).toBeChecked();
     expect(toggle).toHaveTextContent('Ligados');
@@ -605,10 +636,10 @@ describe('sounds before starting', () => {
   });
 
   test('the choice survives a reload', () => {
-    const { unmount } = render(<App clock={clock} />);
+    const { unmount } = render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('switch', { name: 'Sons dos alertas' }));
     unmount();
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     expect(screen.getByRole('switch', { name: 'Sons dos alertas' })).not.toBeChecked();
   });
 });
@@ -651,7 +682,7 @@ describe('sounds for gestures and the end of the routine', () => {
   test('completing plays a small win, postponing a swap, the last one celebrates and opens the end', () => {
     short();
     const feedback = vi.fn();
-    render(<App clock={clock} feedback={feedback} />);
+    render(<App home="plan" clock={clock} feedback={feedback} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     swipe(card('Tarefa atual: Um'), -150);
     expect(feedback).toHaveBeenLastCalledWith('done');
@@ -662,7 +693,8 @@ describe('sounds for gestures and the end of the routine', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     swipe(card('Tarefa atual: Dois'), -150);
     expect(feedback).toHaveBeenLastCalledWith('finish');
-    const dialog = screen.getByRole('dialog', { name: 'Rotina concluída' });
+    const dialog = screen.getByRole('dialog', { name: 'Encerrar rotina' });
+    expect(dialog).toHaveTextContent('Tudo feito!');
     expect(dialog).toHaveTextContent('3 tarefas');
     expect(dialog).toHaveTextContent('antes do deadline');
     // A gesture that changes nothing makes no sound.
@@ -676,17 +708,17 @@ describe('sounds for gestures and the end of the routine', () => {
     short();
     localStorage.setItem(KEYS.settings, JSON.stringify({ sound: false, restAfterMin: 2, reminderMin: 2 }));
     const feedback = vi.fn();
-    render(<App clock={clock} feedback={feedback} />);
+    render(<App home="plan" clock={clock} feedback={feedback} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     swipe(card('Tarefa atual: Um'), -150);
     swipe(card('Tarefa atual: Dois'), 150);
     expect(feedback).not.toHaveBeenCalled();
   });
 
-  test('the end window saves the routine as run, restarts it, edits it or just ends', () => {
+  test('the end window after the last task restarts, edits or just ends', () => {
     short();
     const finish = () => ['Um', 'Dois', 'Três'].forEach((name) => swipe(card(`Tarefa atual: ${name}`), -150));
-    const { unmount } = render(<App clock={clock} feedback={() => {}} />);
+    const { unmount } = render(<App home="plan" clock={clock} feedback={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     finish();
     // Closing keeps the finished timeline; its button brings the window back.
@@ -694,21 +726,27 @@ describe('sounds for gestures and the end of the routine', () => {
     expect(screen.getByText('Tudo feito!')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Encerrar rotina' }));
     // Editing continues the run with new tasks.
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Rotina concluída' })).getByRole('button', { name: 'Editar a rotina' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Encerrar rotina' })).getByRole('button', { name: 'Editar rotina' }));
     expect(screen.getByRole('dialog', { name: 'Editar rotina' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Encerrar rotina' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar como rotina' }));
-    expect(JSON.parse(localStorage.getItem(KEYS.templates)).map((t) => t.name)).toEqual(['Curta']);
-    expect(screen.getByRole('button', { name: 'Começar' })).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Encerrar rotina' })).getByRole('button', { name: 'Encerrar' }));
+    expect(localStorage.getItem(KEYS.templates)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Nova rotina' })).toBeInTheDocument();
     unmount();
 
-    render(<App clock={clock} feedback={() => {}} />);
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    render(<App home="plan" clock={clock} feedback={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     finish();
     fireEvent.click(screen.getByRole('button', { name: 'Recomeçar com novo deadline' }));
     expect(screen.getByRole('textbox', { name: 'Nome da tarefa 1' })).toHaveValue('Um');
     expect(localStorage.getItem(KEYS.run)).toBeNull();
+    // The planner opens at the deadline and its suggestion.
+    expect(scrollIntoView.mock.contexts.at(-1).contains(screen.getByLabelText('Deadline'))).toBe(true);
+    delete Element.prototype.scrollIntoView;
   });
 });
 
@@ -767,7 +805,7 @@ describe('reordering during the routine', () => {
 
   test('hold the handle, then drag: the card moves and keeps its time', () => {
     const feedback = vi.fn();
-    render(<App clock={clock} feedback={feedback} />);
+    render(<App home="plan" clock={clock} feedback={feedback} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
     const before = card('Próxima: Almoço').textContent;
     press('Almoço', 350);
@@ -818,11 +856,83 @@ describe('reordering during the routine', () => {
 
 describe('overrun reminder setting', () => {
   test('can be set to every 5 minutes or never', () => {
-    render(<App clock={clock} />);
+    render(<App home="plan" clock={clock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
     const select = screen.getByRole('combobox', { name: 'Lembrete depois do tempo' });
     expect(select).toHaveValue('2');
     fireEvent.change(select, { target: { value: '0' } });
     expect(JSON.parse(localStorage.getItem(KEYS.settings)).reminderMin).toBe(0);
+  });
+});
+
+describe('home: the routines screen', () => {
+  const saved = [
+    { id: 'n', name: 'Noite', deadline: '21:00', templateId: null, tasks: [{ id: 'a', name: 'Ler', minutes: 120 }] },
+    { id: 'm', name: 'Manhã', deadline: '07:30', templateId: null, tasks: [{ id: 'b', name: 'Banho', minutes: 50 }] },
+  ];
+  const listed = () => within(screen.getByRole('list', { name: 'Rotinas salvas' }))
+    .getAllByRole('button', { name: /^Abrir / }).map((b) => b.getAttribute('aria-label'));
+
+  test('the app opens on the routines; a routine opens in the planner and back', () => {
+    localStorage.setItem(KEYS.templates, JSON.stringify(saved));
+    render(<App clock={clock} />);
+    expect(screen.getByRole('heading', { name: 'Rotinas' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Começar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir Manhã' })).toHaveTextContent('06:40 → 07:30');
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Manhã' }));
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Manhã');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Continuar editando/ }));
+    expect(screen.getByLabelText('Nome da tarefa 1')).toHaveValue('Banho');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotinas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nova rotina' }));
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('');
+  });
+
+  test('routines sort by last use, end or start time, and the choice is kept', () => {
+    localStorage.setItem(KEYS.templates, JSON.stringify(saved));
+    const { unmount } = render(<App clock={clock} />);
+    // Last used first: starting Manhã moves it to the top.
+    expect(listed()).toEqual(['Abrir Noite', 'Abrir Manhã']);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Manhã' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+    expect(JSON.parse(localStorage.getItem(KEYS.templates)).find((t) => t.id === 'm').lastUsedAt).toBe(nowMs);
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Encerrar' }));
+    expect(listed()).toEqual(['Abrir Manhã', 'Abrir Noite']);
+    const sort = screen.getByRole('combobox', { name: 'Ordenar rotinas' });
+    fireEvent.change(sort, { target: { value: 'start' } });
+    expect(listed()).toEqual(['Abrir Manhã', 'Abrir Noite']);
+    fireEvent.change(sort, { target: { value: 'manual' } });
+    expect(listed()).toEqual(['Abrir Noite', 'Abrir Manhã']);
+    expect(screen.getByRole('button', { name: 'Subir rotina Manhã' })).toBeInTheDocument();
+    fireEvent.change(sort, { target: { value: 'end' } });
+    expect(listed()).toEqual(['Abrir Manhã', 'Abrir Noite']);
+    expect(screen.queryByRole('button', { name: 'Subir rotina Manhã' })).not.toBeInTheDocument();
+    unmount();
+    render(<App clock={clock} />);
+    expect(screen.getByRole('combobox', { name: 'Ordenar rotinas' })).toHaveValue('end');
+  });
+
+  test('a routine link opens straight in the planner; an empty start shows how to begin', () => {
+    window.history.replaceState(null, '', '/?rotina=3.0900.Cafe-10&nome=Manha');
+    const { unmount } = render(<App clock={clock} />);
+    expect(screen.getByLabelText('Nome da rotina')).toHaveValue('Manha');
+    unmount();
+    localStorage.clear();
+    render(<App clock={clock} />);
+    expect(screen.getByText(/Nenhuma rotina salva ainda/)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Ordenar rotinas' })).not.toBeInTheDocument();
+  });
+});
+
+describe('alert style setting', () => {
+  test('urgent by default, can be switched to soft', () => {
+    render(<App home="plan" clock={clock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+    const select = screen.getByRole('combobox', { name: 'Tipo de alerta' });
+    expect(select).toHaveValue('urgent');
+    fireEvent.change(select, { target: { value: 'soft' } });
+    expect(JSON.parse(localStorage.getItem(KEYS.settings)).alertStyle).toBe('soft');
   });
 });

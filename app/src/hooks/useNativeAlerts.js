@@ -4,8 +4,8 @@ import { alertAt, alertPlan, planSignature } from '../lib/nativeAlerts';
 // Android app only: keeps the system alarms in step with the current task, so alerts sound
 // with the screen off, and returns the `play` that useAlerts uses instead of Web Audio.
 // Without a bridge (the web) it does nothing and returns undefined.
-export default function useNativeAlerts(view, now, { enabled, bridge, reminderMs = 0 }) {
-  const plan = bridge && view ? alertPlan(view, now, { reminderMs }) : [];
+export default function useNativeAlerts(view, now, { enabled, bridge, reminderMs = 0, style = 'urgent' }) {
+  const plan = bridge && view ? alertPlan(view, now, { reminderMs, style }) : [];
   const planRef = useRef(plan);
   const nowRef = useRef(now);
   planRef.current = plan;

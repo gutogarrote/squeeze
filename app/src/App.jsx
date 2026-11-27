@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PlanScreen from './screens/PlanScreen';
+import RoutinesScreen from './screens/RoutinesScreen';
 import RunScreen from './screens/RunScreen';
 import RunEditor from './components/RunEditor';
 import RestScreen from './components/RestScreen';
 import SettingsSheet from './components/SettingsSheet';
 import EndSheet from './components/EndSheet';
-import FinishedSheet from './components/FinishedSheet';
 import Sheet, { Button } from './components/Sheet';
 import PwaUpdateNotice from './components/PwaUpdateNotice';
 import { cleanItems } from './components/TaskListEditor';
@@ -24,9 +24,18 @@ import {
   EXAMPLE_PLAN, loadDraft, loadRun, loadSettings, loadTemplates, makeId, normalizePlan,
   saveDraft, saveRun, saveSettings, saveTemplates, upsertTemplate,
 } from './lib/storage';
-import { playFeedback, primeSounds } from './lib/sound';
+import { playFeedback, playSound, primeSounds } from './lib/sound';
 import { nativeAlerts, shareOrigin } from './lib/native';
 import { typeProps } from './lib/taskTypes';
+
+const planTasks = (tasks) => tasks.map((t) => ({ name: t.name, minutes: t.minutes, type: typeProps(t).type }));
+// A run changed the saved routine it came from: name, deadline, tasks, minutes or types.
+function changesSavedRoutine(run, templates) {
+  const template = templates.find((t) => t.id === run?.templateId);
+  if (!template) return false;
+  return template.name !== run.name || template.deadline !== formatClock(run.deadlineMs) ||
+    JSON.stringify(planTasks(template.tasks)) !== JSON.stringify(planTasks(runToPlanTasks(run)));
+}
 
 const withIds = (tasks) => tasks.map((t) => ({ id: makeId('p'), name: t.name, minutes: t.minutes, ...typeProps(t) }));
 const planFrom = ({ name, deadline, tasks }, templateId = null) => ({ name, deadline, templateId, tasks: withIds(tasks) });
@@ -44,7 +53,7 @@ function readLink() {
   return parsed;
 }
 
-export default function App({ clock = Date.now, native = nativeAlerts(), feedback = playFeedback }) {
+export default function App({ clock = Date.now, native = nativeAlerts(), feedback = playFeedback, home = 'routines' }) {
   const now = useNow(clock);
   const [link] = useState(readLink);
   const [settings, setSettings] = useState(loadSettings);
@@ -64,7 +73,10 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
     if (link.status === 'invalid') return link.error;
     return initial.expiredAtLoad ? 'A rotina anterior foi encerrada automaticamente, 12 horas depois do deadline.' : '';
   });
-  const [sheet, setSheet] = useState(null); // 'settings' | 'end' | 'finished' | 'edit' | { share: url }
+  const [sheet, setSheet] = useState(null); // 'settings' | 'end' | 'edit' | { share: url }
+  // Without a run: the routines (home) or the planner. A routine link opens in the planner.
+  const [screen, setScreen] = useState(() => (link.status === 'valid' ? 'plan' : home));
+  const [focusDeadline, setFocusDeadline] = useState(false);
   const runRef = useRef(run);
   runRef.current = run;
 
@@ -92,7 +104,7 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
       if (parsed.status !== 'valid') return;
       setSheet(null);
       if (runRef.current) setPendingImport(parsed.plan);
-      else setDraft(planFrom(parsed.plan));
+      else { setDraft(planFrom(parsed.plan)); setScreen('plan'); }
     })).then((listener) => { handle = listener; if (disposed) listener?.remove?.(); }).catch(() => {});
     return () => { disposed = true; handle?.remove?.(); };
   }, [native, setDraft]);
@@ -111,11 +123,15 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
   const rest = useRestMode({ active: !!view && !view.allDone && !sheet, restAfterMin: settings.restAfterMin, now, clock });
   // In the Android app the system plays the alerts (they must sound with the screen off).
   const reminderMs = settings.reminderMin * 60000;
-  const playNative = useNativeAlerts(view, now, { enabled: settings.sound, bridge: native, reminderMs });
-  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, play: playNative, reminderMs });
+  const style = settings.alertStyle;
+  const playNative = useNativeAlerts(view, now, { enabled: settings.sound, bridge: native, reminderMs, style });
+  const playWeb = useCallback((level) => playSound(level, style), [style]);
+  useAlerts(view, { enabled: settings.sound, onAlert: rest.wake, play: playNative || playWeb, reminderMs });
   // Short sounds answering the user's own gestures follow the same switch.
   const cue = (name) => { if (settings.sound) feedback(name); };
   const wakeLock = useScreenWakeLock(!!view && sheet !== 'edit', !!view?.allDone);
+
+  const go = (next) => { setFocusDeadline(false); setScreen(next); };
 
   // Every gesture applies an engine operation; it returns false when nothing changed.
   const apply = (operation) => {
@@ -131,6 +147,12 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
     const tasks = cleanItems(draft.tasks);
     const plan = { ...draft, tasks };
     setDraft(plan);
+    // The routine was used now: "last used" order on the home screen.
+    if (templates.some((t) => t.id === draft.templateId)) {
+      const list = templates.map((t) => (t.id === draft.templateId ? { ...t, lastUsedAt: clock() } : t));
+      setTemplates(list);
+      saveTemplates(list);
+    }
     if (native) Promise.resolve(native.requestNotifications()).catch(() => {});
     primeSounds();
     setRun(startRun({ name: draft.name.trim() || 'Rotina', templateId: draft.templateId, deadlineMs: nextOccurrence(draft.deadline, clock()), tasks }, clock()));
@@ -218,7 +240,7 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
     if (!changed) return false;
     if (viewRun(runRef.current, clock()).allDone) {
       cue('finish');
-      setSheet('finished');
+      setSheet('end');
     } else cue('done');
     return true;
   }
@@ -255,12 +277,15 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
     }
     setRun(null);
     setSheet(null);
+    // Restarting goes to the planner, at the deadline; anything else back to the routines.
+    if (restart) { setScreen('plan'); setFocusDeadline(true); } else go('routines');
   }
 
   function resolveImport(replace) {
     if (replace) {
       setRun(null);
       setDraft(planFrom(pendingImport));
+      go('plan');
     }
     setPendingImport(null);
   }
@@ -275,7 +300,7 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
           onPostpone={postpone}
           onMove={move}
           onShare={shareRun}
-          onFinish={() => setSheet('finished')}
+          onFinish={() => setSheet('end')}
           onReactivate={(id) => apply((r, t) => reactivateTask(r, id, t))}
           onReleaseBuffer={() => apply((r, t) => releaseBuffer(r, t))}
           onAddFive={() => apply((r, t) => addTimeToCurrent(r, t))}
@@ -284,20 +309,32 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
           onEnd={() => setSheet('end')}
           onSettings={() => setSheet('settings')}
         />
+      ) : screen === 'routines' ? (
+        <RoutinesScreen
+          templates={templates}
+          currentId={draft.templateId}
+          draft={draft}
+          sort={settings.routineSort}
+          onSort={(routineSort) => { const next = { ...settings, routineSort }; setSettings(next); saveSettings(next); }}
+          onOpen={(t) => { setDraft(planFrom(t, t.id)); go('plan'); }}
+          onDelete={deleteTemplate}
+          onRename={renameTemplate}
+          onMove={moveTemplate}
+          onNew={() => { setDraft({ name: '', deadline: draft.deadline, templateId: null, tasks: [] }); go('plan'); }}
+          onContinue={() => go('plan')}
+          onSettings={() => setSheet('settings')}
+        />
       ) : (
         <PlanScreen
           draft={draft}
+          focusDeadline={focusDeadline}
+          onRoutines={() => go('routines')}
           onChange={setDraft}
           now={now}
           templates={templates}
           onStart={start}
           onSave={() => saveTemplate(false)}
           onSaveAsNew={(name) => saveTemplate(true, name)}
-          onOpenTemplate={(t) => setDraft(planFrom(t, t.id))}
-          onDeleteTemplate={deleteTemplate}
-          onRenameTemplate={renameTemplate}
-          onMoveTemplate={moveTemplate}
-          onNew={() => setDraft({ name: '', deadline: draft.deadline, templateId: null, tasks: [] })}
           onShare={share}
           onSettings={() => setSheet('settings')}
           sound={settings.sound}
@@ -309,12 +346,9 @@ export default function App({ clock = Date.now, native = nativeAlerts(), feedbac
         <RunEditor view={view} now={now} onCancel={() => setSheet(null)}
           onSave={(edit) => { apply((r, t) => applyEdit(r, edit, t)); setSheet(null); }} />
       )}
-      {sheet === 'finished' && view && (
-        <FinishedSheet view={view} now={now} hasTemplate={templates.some((t) => t.id === run.templateId)}
-          onEnd={endRun} onEdit={() => setSheet('edit')} onClose={() => setSheet(null)} />
-      )}
       {sheet === 'end' && view && (
-        <EndSheet hasTemplate={templates.some((t) => t.id === run.templateId)} onEnd={endRun} onClose={() => setSheet(null)} />
+        <EndSheet view={view} now={now} canSave={changesSavedRoutine(run, templates)}
+          onEnd={endRun} onEdit={() => setSheet('edit')} onClose={() => setSheet(null)} />
       )}
       {sheet === 'settings' && (
         <SettingsSheet settings={settings} wakeLock={wakeLock} native={!!native} onClose={() => setSheet(null)}

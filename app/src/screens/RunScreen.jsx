@@ -4,6 +4,7 @@ import useListMotion from '../hooks/useListMotion';
 import useReorder from '../hooks/useReorder';
 import { Button } from '../components/Sheet';
 import TimelineCard from '../components/TimelineCard';
+import { GearIcon } from './RoutinesScreen';
 import { formatClock, formatCountdown, formatMinutes } from '../lib/clock';
 import { cardHeight } from '../lib/cardSize';
 
@@ -235,8 +236,8 @@ export default function RunScreen({
   });
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl animate-rise px-4 pb-24 pt-4">
-      <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur">
+    <div className="mx-auto min-h-screen max-w-xl animate-rise px-4 pt-4" style={{ paddingBottom: 'calc(var(--safe-bottom) + 6rem)' }}>
+      <header className="sticky top-0 z-20 -mx-4 bg-zinc-950/90 px-4 pb-3 pt-safe backdrop-blur">
         <TimelineCard startMs={view.startedAtMs} deadlineMs={view.deadlineMs} now={now} late={view.late} squeezed={view.deficitMs > 0} />
         {view.protectedDeficitMs > 0 && (
           <p role="status" className="mt-2 rounded-xl bg-rose-500/15 px-4 py-2 text-sm text-rose-200 ring-1 ring-rose-400/40">
@@ -313,7 +314,7 @@ export default function RunScreen({
           </svg>
         </Button>
         <Button variant="secondary" onClick={onEdit}>Editar</Button>
-        <Button variant="secondary" onClick={onSettings} aria-label="Ajustes">⚙︎</Button>
+        <Button variant="secondary" onClick={onSettings} aria-label="Ajustes" className="px-3"><GearIcon /></Button>
         <Button variant="secondary" onClick={onEnd}>Encerrar</Button>
       </nav>
       {!view.allDone && (

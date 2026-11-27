@@ -65,6 +65,21 @@ function addBudget(t, ms) {
   t.absorbedMs = 0;
 }
 
+// Time freed by a completion when the routine has an explicit buffer task: it first gives
+// back what squeezed tasks lost, up to their estimates, in proportion to what each lost; the
+// rest grows the buffer instead of stretching tasks past their estimates.
+function giveFreed(run, ms) {
+  const buffer = run.tasks.find((t) => t.status === 'pending' && taskType(t) === 'buffer');
+  if (!buffer) { give(run, ms); return; }
+  const amount = Math.max(0, Math.round(ms));
+  if (!amount) return;
+  const idx = pendingIndexes(run).filter((i) => taskType(run.tasks[i]) === 'normal');
+  const missing = idx.map((i) => Math.max(0, referenceOf(run.tasks[i]) - claimOf(run.tasks[i])));
+  const parts = splitCapped(amount, missing, missing);
+  idx.forEach((i, k) => addBudget(run.tasks[i], parts[k]));
+  storeBuffer(run, amount - sum(parts));
+}
+
 // Take `ms` for someone: buffer first, then the other pending tasks in proportion to their
 // claims (same percentage for everyone, nobody below zero). Returns what could not be found
 // (that part becomes delay past the deadline).
@@ -180,7 +195,7 @@ export function completeTask(run, id, nowMs) {
   t.doneLeftoverMs = leftover;
   // Freed fixed time first pays any shortfall caused by protected durations.
   const slack = r.deadlineMs - nowMs - sum(r.tasks.filter((task) => task.status === 'pending').map(claimOf)) - r.bufferMs;
-  give(r, Math.min(leftover, Math.max(0, slack)));
+  giveFreed(r, Math.min(leftover, Math.max(0, slack)));
   activate(r, nowMs, previous);
   return r;
 }

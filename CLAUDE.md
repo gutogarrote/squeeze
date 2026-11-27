@@ -17,10 +17,10 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
 - `lib/split.js` (divisão proporcional exata), `lib/clock.js` (próxima ocorrência do deadline, formatos),
   `lib/routineLink.js` (link v3, ver `docs/url-rotina-v3.md`), `lib/storage.js` (localStorage validado),
   `lib/alerts.js` + `lib/sound.js` (limites e lembretes dos alertas, sons dos gestos e do fim, sintetizados com Web Audio),
-  `lib/cardSize.js` (altura dos cards pela raiz quadrada dos minutos, specifications.md §12).
+  `lib/cardSize.js` (altura dos cards, specifications.md §12), `lib/routineSort.js` (ordem da tela de rotinas).
 - `App.jsx`: estado (rascunho, rotinas salvas, execução, ajustes), importação de links, encerramento.
-- `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
-  `TaskListEditor`, `RunEditor`, `EndSheet`, `FinishedSheet`, `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
+- `screens/RoutinesScreen.jsx` (tela inicial), `screens/PlanScreen.jsx` e `screens/RunScreen.jsx`; `components/SwipeCard.jsx` (gestos),
+  `TaskListEditor`, `RunEditor`, `EndSheet` (única janela de encerramento), `SettingsSheet`, `RestScreen`, `Sheet`, `PwaUpdateNotice`.
 - `hooks/`: `useNow` (relógio de 1 s), `useAlerts`, `useRestMode`, `useScreenWakeLock`.
 - `hooks/useListMotion` anima a lista da execução (FLIP): o card concluído sai voando, o adiado
   viaja até o novo lugar; `SwipeCard` cuida do arrasto (painel de ação, resistência, flick, háptico).
@@ -29,7 +29,9 @@ Tudo no cliente (React + Vite + Tailwind), sem backend. Em `app/src/`:
 - `pwa/` e `instructions/`: service worker gerado no build e página `/instrucoes` a partir do doc v3.
 
 Chaves de storage: `squeeze:draft`, `squeeze:templates`, `squeeze:run`, `squeeze:settings`,
-`squeeze:keep-screen-on`. `App` aceita `clock` (padrão `Date.now`) para testes com tempo controlado
+`squeeze:keep-screen-on`. Margens das barras do sistema: classes `pt-safe`, `pb-safe-bottom`,
+`pb-safe-bar` e variáveis `--safe-top`/`--safe-bottom` em `index.css`. `App` aceita `home`
+(tela inicial, padrão `routines`; os testes usam `plan`), `clock` (padrão `Date.now`) para testes com tempo controlado
 e `native` (ponte do app Android; `null` na web).
 
 ## Regras do motor de tempo
@@ -40,7 +42,8 @@ e `native` (ponte do app Android; `null` na web).
 - Preservar a igualdade de §6.1 (`agora + restante da atual + orçamentos + folga = deadline`) e
   usar os exemplos de §6.4 como testes.
 - Tirar tempo: folga primeiro, depois pendentes proporcionalmente aos orçamentos. Dar tempo:
-  pendentes proporcionalmente às referências; sem referência, vai para a folga.
+  pendentes proporcionalmente às referências; sem referência, vai para a folga. Exceção: ao
+  concluir com uma tarefa folga, o tempo devolve às comprimidas até a estimativa e o resto vai à folga.
 - Tipos opcionais de tarefa: `fixed` e `buffer`; ausência de tipo significa flexível. Fixas nunca
   participam de compressão/distribuição automática; a reserva explícita absorve atrasos primeiro e
   incorpora a folga automática. `taskTypes.js` normaliza os tipos e garante uma folga.

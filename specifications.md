@@ -176,7 +176,7 @@ Todas as mudanças se reduzem a duas operações:
 |---|---|
 | **Tarefa atual dentro do orçamento** | Só o restante dela diminui. As outras não mudam. |
 | **Tarefa atual estourando** | Cada segundo de excesso é **tirado** (folga primeiro, depois as pendentes). O excesso aparece em negativo (`-2 min`). |
-| **Concluir a atual** | Se sobrou restante, ele é **dado** às pendentes (que crescem). O restante da tarefa concluída é guardado para uma eventual reativação. |
+| **Concluir a atual** | Se sobrou restante, ele é **dado** às pendentes (que crescem). Com uma tarefa **folga** na rotina, ele primeiro devolve às pendentes comprimidas o que perderam, até a estimativa de cada uma (na proporção do que perderam), e o resto vai para a folga: as tarefas não crescem além da estimativa. O restante da tarefa concluída é guardado para uma eventual reativação. |
 | **Concluir uma próxima tarefa** | Todo o restante dela é **dado** às outras pendentes, incluindo a atual. Fica guardado para uma eventual reativação. O tempo já consumido (se ela foi atual antes de um adiamento) continua registrado. |
 | **Adiar** | A tarefa troca de lugar com a seguinte e **conserva o restante** (orçamento e consumido não mudam). Se tinha estourado, volta com 0 min. Adiar uma próxima tarefa não muda nenhum tempo, só a ordem. |
 | **Reativar uma concluída** | Ela vira a atual com o restante que tinha ao ser concluída (0 se tinha estourado). Esse tempo é **tirado** (folga primeiro, depois as pendentes, incluindo a atual anterior, que agora é a próxima e fica pausada com o tempo que já gastou). |
@@ -242,15 +242,16 @@ folga) e pode incluir novas tarefas para aproveitar o tempo até o deadline.
 
 ## 8. Encerramento
 
-- O usuário pode encerrar a rotina a qualquer momento (com confirmação).
-- Concluir a última tarefa pendente encerra a rotina: toca um som curto de comemoração e abre a
-  janela **Rotina concluída**, com o resumo (tarefas, tempo, margem em relação ao deadline) e as
-  opções salvar as alterações na rotina (ou salvar como rotina), recomeçar com novo deadline,
-  editar a rotina (continua a execução, para incluir tarefas) e encerrar sem salvar. Fechar a
-  janela mantém a timeline concluída, onde ainda é possível reativar uma tarefa.
+- O usuário pode encerrar a rotina a qualquer momento pelo botão **Encerrar**; concluir a última
+  tarefa pendente abre a mesma janela, com um som curto de comemoração e o "🎉 Tudo feito!".
+- A janela **Encerrar rotina** mostra o resumo (tarefas feitas, tempo, margem em relação ao
+  deadline) e, nesta ordem: **Encerrar**; **Recomeçar com novo deadline** (abre o planejamento com
+  as tarefas, já rolado até o deadline e a sugestão "Usar HH:MM como deadline"); **Editar rotina**
+  (continua a execução, para incluir ou mudar tarefas); **Salvar alterações na rotina**, só quando
+  a execução veio de uma rotina salva e mudou nome, deadline, tarefas, minutos ou tipos. Fechar a
+  janela continua a rotina. Encerrar e salvar levam de volta à tela de rotinas.
 - Durante a rotina, o botão de compartilhar envia o link da rotina como está (tarefas, estimativas
   e deadline atuais) pela folha de compartilhamento do sistema; sem ela, copia o link.
-- Ao encerrar, pode escolher **atualizar o modelo** com as tarefas e estimativas desta execução.
 - Uma rotina aberta é encerrada automaticamente **12 horas depois do deadline**.
 
 ## 9. Deadline e atraso
@@ -268,6 +269,7 @@ Três toques, baseados no **restante da tarefa atual**:
 
 | Momento | Toque |
 |---|---|
+| Restante chega a **10, 15, 20... min** | Dois toques leves (marca de 5 em 5 min). Uma tarefa que começa exatamente numa marca (15 min) toca ao começar. |
 | Restante chega a **5 min** | Dois toques firmes. |
 | Restante chega a **1 min** | Três toques mais fortes. |
 | Restante chega a **0** (tempo esgotado) | Seis toques alternados, mais intensos e prolongados. |
@@ -286,6 +288,8 @@ Regras:
 - Depois que o tempo da tarefa acaba, um **lembrete** curto e suave toca a cada 2 min enquanto
   ela continua a atual (ajustável nos Ajustes: a cada 2 min, a cada 5 min ou nunca). Um +5 min
   que devolve tempo à tarefa rearma os lembretes.
+- **Tipo de alerta** nos Ajustes: **urgentes** (padrão, os toques acima) ou **suaves**, sinos
+  senoidais mais baixos nos mesmos momentos, para marcar a passagem do tempo sem alarme.
 - Os toques são sintetizados no próprio app (Web Audio), sem arquivos de som. O áudio é liberado no toque em "Começar".
 
 Prioridade: os alertas vêm **depois** da primeira versão de UI/UX.
@@ -327,12 +331,16 @@ Nenhum card some ou fica ilegível quando o tempo se esgota. A regra está em `l
 
 ## 13. Rotinas salvas e persistência
 
-Não há rotinas fixas de manhã e noite. O usuário pode:
+Não há rotinas fixas de manhã e noite. O app abre na **tela de rotinas**: as rotinas salvas,
+cada uma com horário inicial → horário final, número de tarefas e total; "Continuar editando" o
+rascunho aberto; e **Nova rotina**. A lista pode ser ordenada por **última usada** (padrão; uma
+rotina é usada ao começar), **horário final**, **horário inicial** ou **manual**; a escolha fica
+salva. Um link de rotina abre direto no planejamento. O usuário pode:
 
 - Criar uma rotina nova e salvá-la com nome.
 - Abrir, modificar e salvar de novo uma rotina salva.
 - **Salvar como…**: escolher um nome para uma nova cópia, preservando a rotina original.
-- Reordenar rotinas salvas com botões de subir e descer; a ordem é persistida no aparelho.
+- Na ordem manual, reordenar rotinas salvas com botões de subir e descer; a ordem é persistida no aparelho.
 - **Renomear** na lista de rotinas salvas: mudar só o nome, sem alterar tarefas ou deadline
   nem gravar edições pendentes no planejamento. O rascunho aberto acompanha o novo nome
   quando corresponde à rotina renomeada.

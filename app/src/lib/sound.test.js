@@ -113,3 +113,19 @@ test('the overrun reminder and the feedback tones are short and quieter than the
   });
   expect(() => playFeedback('unknown')).not.toThrow();
 });
+
+test('soft alerts keep the same moments with gentler, quieter tones', async () => {
+  const { SOFT_TONES, TONES, tonesFor, playSound } = await import('./sound');
+  const loudest = (tones) => Math.max(...tones.map((tone) => tone[3]));
+  [LEVEL.five, LEVEL.one, LEVEL.zero, LEVEL.reminder, LEVEL.tick].forEach((level) => {
+    expect(SOFT_TONES[level].every((tone) => tone[4] === 'sine')).toBe(true);
+    expect(loudest(SOFT_TONES[level])).toBeLessThan(loudest(TONES[level]));
+    expect(tonesFor(level, 'soft')).toBe(SOFT_TONES[level]);
+    expect(tonesFor(level)).toBe(TONES[level]);
+  });
+  // The tick is the lightest sound of its style.
+  expect(loudest(TONES[LEVEL.tick])).toBeLessThan(loudest(TONES[LEVEL.five]));
+  playSound(LEVEL.tick, 'soft');
+  expect(oscillators).toHaveLength(SOFT_TONES[LEVEL.tick].length);
+  expect(oscillators[0].type).toBe('sine');
+});
