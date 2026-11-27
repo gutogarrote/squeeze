@@ -5,6 +5,8 @@ import { LEVEL } from '../lib/alerts';
 
 const M = 60000;
 const view = (remainingMs, id = 'a') => ({ current: { id, name: 'Banho', remainingMs }, currentSinceMs: 0 });
+// The three thresholds of a plan, without the 5-minute ticks.
+const thresholds = (alerts) => alerts.filter((a) => a.level !== LEVEL.tick);
 const makeBridge = () => ({ sync: vi.fn(() => Promise.resolve()), play: vi.fn(() => Promise.resolve()) });
 
 test('schedules once per change of the current task, not on every tick', () => {
@@ -13,12 +15,12 @@ test('schedules once per change of the current task, not on every tick', () => {
     initialProps: { v: view(20 * M), now: 0, enabled: true },
   });
   expect(bridge.sync).toHaveBeenCalledOnce();
-  expect(bridge.sync.mock.calls[0][0].alerts.map((a) => a.atMs)).toEqual([15 * M, 19 * M, 20 * M]);
+  expect(thresholds(bridge.sync.mock.calls[0][0].alerts).map((a) => a.atMs)).toEqual([15 * M, 19 * M, 20 * M]);
   rerender({ v: view(19 * M), now: M, enabled: true });
   expect(bridge.sync).toHaveBeenCalledOnce();
   rerender({ v: view(24 * M), now: M, enabled: true });
   expect(bridge.sync).toHaveBeenCalledTimes(2);
-  expect(bridge.sync.mock.calls[1][0].alerts.at(-1).atMs).toBe(25 * M);
+  expect(thresholds(bridge.sync.mock.calls[1][0].alerts).at(-1).atMs).toBe(25 * M);
 });
 
 test('muting or ending the routine cancels the alarms', () => {
@@ -29,7 +31,7 @@ test('muting or ending the routine cancels the alarms', () => {
   rerender({ v: view(20 * M), enabled: false });
   expect(bridge.sync).toHaveBeenLastCalledWith({ alerts: [] });
   rerender({ v: view(20 * M), enabled: true });
-  expect(bridge.sync.mock.calls.at(-1)[0].alerts).toHaveLength(3);
+  expect(thresholds(bridge.sync.mock.calls.at(-1)[0].alerts)).toHaveLength(3);
   rerender({ v: null, enabled: true });
   expect(bridge.sync).toHaveBeenLastCalledWith({ alerts: [] });
 });

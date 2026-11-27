@@ -16,7 +16,7 @@ final class AlertStore {
     private static final String PREFS = "squeeze_alerts";
     private static final String ALERTS = "alerts";
     private static final String PLAYED = "played";
-    private static final int PLAYED_LIMIT = 64;
+    private static final int PLAYED_LIMIT = 128;
 
     private AlertStore() {}
 

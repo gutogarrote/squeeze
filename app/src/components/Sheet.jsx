@@ -12,13 +12,15 @@ export default function Sheet({ title, onClose, children, footer, wide = false }
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
       <div aria-hidden="true" onClick={onClose} className="absolute inset-0 animate-fade-in bg-black/70" />
       <section role="dialog" aria-modal="true" aria-label={title}
-        className={`relative flex max-h-[92vh] w-full animate-sheet-in flex-col rounded-t-3xl bg-zinc-950 ring-1 ring-white/10 sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}>
+        style={{ maxHeight: 'calc(100dvh - var(--safe-top) - 1rem)' }}
+        className={`relative flex w-full animate-sheet-in flex-col rounded-t-3xl bg-zinc-950 ring-1 ring-white/10 sm:rounded-3xl ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'}`}>
         <header className="flex items-center justify-between px-5 pb-2 pt-5">
           <h2 className="text-lg font-semibold text-zinc-100">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Fechar" className="grid h-9 w-9 place-items-center rounded-full text-xl text-zinc-400 hover:bg-white/10">×</button>
         </header>
-        <div className="overflow-y-auto px-5 pb-5">{children}</div>
-        {footer && <footer className="border-t border-white/5 px-5 py-4">{footer}</footer>}
+        {/* The last element keeps clear of the navigation bar. */}
+        <div className="overflow-y-auto px-5" style={{ paddingBottom: footer ? '1.25rem' : 'calc(var(--safe-bottom) + 2rem)' }}>{children}</div>
+        {footer && <footer className="border-t border-white/5 px-5 pt-4" style={{ paddingBottom: 'calc(var(--safe-bottom) + 1.5rem)' }}>{footer}</footer>}
       </section>
     </div>
   );

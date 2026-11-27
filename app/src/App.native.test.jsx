@@ -10,6 +10,7 @@ import { vi } from 'vitest';
 import App from './App';
 import { LEVEL } from './lib/alerts';
 import * as sound from './lib/sound';
+import { SOFT_TONES } from './lib/sound';
 
 vi.mock('./components/PwaUpdateNotice', () => ({ default: () => <p>pwa</p> }));
 
@@ -25,7 +26,7 @@ const clock = () => nowMs;
 const advance = (ms) => { nowMs += ms; act(() => { vi.advanceTimersByTime(1000); }); };
 const lastSync = () => native.sync.mock.calls.at(-1)[0].alerts;
 // The three thresholds, without the overrun reminders that follow them.
-const thresholds = () => lastSync().filter((a) => a.level !== LEVEL.reminder);
+const thresholds = () => lastSync().filter((a) => a.level !== LEVEL.reminder && a.level !== LEVEL.tick);
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
@@ -44,7 +45,7 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 test('starting schedules the alarms of the current task and asks for notifications', () => {
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   expect(lastSync()).toEqual([]);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   expect(native.requestNotifications).toHaveBeenCalledOnce();
@@ -57,19 +58,19 @@ test('starting schedules the alarms of the current task and asks for notificatio
 });
 
 test('thresholds play through the system with the alarm key, never through Web Audio', () => {
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   const scheduled = lastSync();
-  const syncs = native.sync.mock.calls.length;
   advance(55 * MIN);
   expect(native.play).toHaveBeenCalledOnce();
   expect(native.play.mock.calls[0][0].alert.key).toBe(scheduled[0].key);
   expect(sound.playSound).not.toHaveBeenCalled();
-  expect(native.sync.mock.calls).toHaveLength(syncs);
+  // The plan moves forward as 5-minute ticks pass, but the thresholds keep their keys.
+  expect(thresholds().map((a) => a.key)).toEqual(scheduled.filter((a) => a.level !== LEVEL.reminder && a.level !== LEVEL.tick).map((a) => a.key));
 });
 
 test('more time, the next task, muting and ending all reschedule', () => {
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   advance(56 * MIN);
   fireEvent.click(screen.getByRole('button', { name: '+5 min' }));
@@ -91,7 +92,7 @@ test('more time, the next task, muting and ending all reschedule', () => {
 });
 
 test('a routine link that opens the app becomes the draft; other addresses are ignored', async () => {
-  const { unmount } = render(<App clock={clock} native={native} />);
+  const { unmount } = render(<App home="plan" clock={clock} native={native} />);
   expect(native.addListener).toHaveBeenCalledWith('routineLink', expect.any(Function));
   openLink('https://squeeze.ggarrote.workers.dev/');
   openLink('not a url');
@@ -107,7 +108,7 @@ test('a routine link that opens the app becomes the draft; other addresses are i
 });
 
 test('a link opened during a routine asks before replacing it', () => {
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   openLink(LINK);
   expect(screen.getByRole('dialog', { name: 'Abrir rotina do link?' })).toBeInTheDocument();
@@ -121,7 +122,7 @@ test('a link opened during a routine asks before replacing it', () => {
 
 test('sharing the running routine opens the Android share sheet with the public address', async () => {
   native.share = vi.fn(() => Promise.resolve());
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Compartilhar rotina' }));
   await act(async () => { await Promise.resolve(); });
@@ -132,7 +133,7 @@ test('sharing the running routine opens the Android share sheet with the public 
 });
 
 test('overrun reminders are scheduled after the end of the task, following the setting', () => {
-  render(<App clock={clock} native={native} />);
+  render(<App home="plan" clock={clock} native={native} />);
   fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
   const reminders = lastSync().filter((a) => a.level === LEVEL.reminder);
   expect(reminders[0].atMs).toBe(local(13, 22));
@@ -140,4 +141,11 @@ test('overrun reminders are scheduled after the end of the task, following the s
   fireEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
   fireEvent.change(screen.getByRole('combobox', { name: 'Lembrete depois do tempo' }), { target: { value: '0' } });
   expect(lastSync().filter((a) => a.level === LEVEL.reminder)).toEqual([]);
+});
+
+test('soft alerts are scheduled with the soft tones', () => {
+  localStorage.setItem('squeeze:settings', JSON.stringify({ sound: true, restAfterMin: 2, reminderMin: 2, alertStyle: 'soft' }));
+  render(<App home="plan" clock={clock} native={native} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+  expect(thresholds()[0].tones).toBe(SOFT_TONES[LEVEL.five]);
 });

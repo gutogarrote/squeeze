@@ -1,6 +1,8 @@
 import React from 'react';
 import Sheet from './Sheet';
-import { REMINDER_OPTIONS, REST_OPTIONS } from '../lib/storage';
+import { ALERT_STYLES, REMINDER_OPTIONS, REST_OPTIONS } from '../lib/storage';
+
+const STYLE_LABELS = { urgent: 'Urgentes', soft: 'Suaves' };
 import { PUBLIC_URL } from '../lib/native';
 
 function Toggle({ label, description, checked, onChange }) {
@@ -21,12 +23,23 @@ export default function SettingsSheet({ settings, onChange, wakeLock, onClose, n
     <Sheet title="Ajustes" onClose={onClose}>
       <div className="space-y-3">
         <Toggle label="Sons" description={native
-          ? 'Alertas aos 5 min, a 1 min e quando o tempo da tarefa acaba, mesmo com a tela apagada, no volume de alarme. Sons curtos ao concluir e adiar.'
-          : 'Alertas aos 5 min, a 1 min e quando o tempo da tarefa acaba. Sons curtos ao concluir e adiar.'}
+          ? 'Alertas a cada 5 min, a 1 min e quando o tempo da tarefa acaba, mesmo com a tela apagada, no volume de alarme. Sons curtos ao concluir e adiar.'
+          : 'Alertas a cada 5 min, a 1 min e quando o tempo da tarefa acaba. Sons curtos ao concluir e adiar.'}
           checked={settings.sound} onChange={(sound) => onChange({ ...settings, sound })} />
         <Toggle label="Manter a tela acesa" description={wakeLock.message}
           checked={wakeLock.enabled} onChange={wakeLock.toggle} />
         {wakeLock.storageFailed && <p className="text-sm text-amber-300">Não foi possível salvar esta preferência neste navegador.</p>}
+        <label className="flex items-center justify-between gap-4 rounded-xl bg-zinc-900 p-4 ring-1 ring-white/5">
+          <span>
+            <span className="block font-medium text-zinc-100">Tipo de alerta</span>
+            <span className="mt-1 block text-sm text-zinc-500">Urgentes avisam que o tempo está acabando; suaves só marcam a passagem do tempo.</span>
+          </span>
+          <select aria-label="Tipo de alerta" value={settings.alertStyle}
+            onChange={(e) => onChange({ ...settings, alertStyle: e.target.value })}
+            className="rounded-lg bg-white/10 px-2 py-2 text-zinc-100 [color-scheme:dark]">
+            {ALERT_STYLES.map((s) => <option key={s} value={s}>{STYLE_LABELS[s]}</option>)}
+          </select>
+        </label>
         <label className="flex items-center justify-between gap-4 rounded-xl bg-zinc-900 p-4 ring-1 ring-white/5">
           <span>
             <span className="block font-medium text-zinc-100">Lembrete depois do tempo</span>

@@ -14,8 +14,8 @@ final class AlertScheduler {
     static final String ACTION = "app.squeeze.android.ALERT";
     static final String EXTRA_KEY = "key";
     // One slot per threshold of the current task (5 min, 1 min, zero) and per overrun
-    // reminder (lib/nativeAlerts.js MAX_REMINDERS), with room to spare.
-    static final int SLOTS = 40;
+    // reminder and 5-minute tick (lib/nativeAlerts.js), with room to spare.
+    static final int SLOTS = 64;
 
     private AlertScheduler() {}
 

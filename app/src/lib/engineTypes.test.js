@@ -156,3 +156,23 @@ test('an explicit time extension reports a shortfall when fixed tasks cannot sur
   expect(left(run, 8)).toEqual({ A: 7, Fixa: 20 });
   expect(viewRun(run, 8 * M).protectedDeficitMs).toBe(5 * M);
 });
+
+test('with a buffer task, time freed by a completion refills squeezed tasks up to their estimates, then the buffer', () => {
+  const list = [{ name: 'A', minutes: 10 }, { name: 'B', minutes: 30 }, { name: 'C', minutes: 10 }, { name: 'Reserva', minutes: 10, type: 'buffer' }];
+  // Starting 20 min late: the buffer pays 10 and the tasks lose the other 10 (A 2, B 6, C 2).
+  let run = startRun({ tasks: list, deadlineMs: 60 * M }, 20 * M);
+  expect(left(run, 20)).toEqual({ A: 8, B: 24, C: 8, Reserva: 0 });
+  // A is done 6 min early: B and C get back what they lost (6 and 2), in proportion.
+  run = completeTask(run, id(run, 'A'), 22 * M);
+  expect(left(run, 22)).toEqual({ A: 6, B: 28.5, C: 9.5, Reserva: 0 });
+  // B is done 26.5 min early: C returns to its estimate and the rest grows the buffer.
+  run = completeTask(run, id(run, 'B'), 24 * M);
+  expect(left(run, 24)).toEqual({ A: 6, B: 26.5, C: 10, Reserva: 26 });
+});
+
+test('without a buffer task, freed time still stretches the remaining tasks', () => {
+  const list = [{ name: 'A', minutes: 10 }, { name: 'B', minutes: 30 }];
+  let run = startRun({ tasks: list, deadlineMs: 40 * M }, 0);
+  run = completeTask(run, id(run, 'A'), 2 * M);
+  expect(left(run, 2)).toEqual({ A: 8, B: 38 });
+});

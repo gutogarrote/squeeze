@@ -32,10 +32,10 @@ test('a run survives a round trip', () => {
 });
 
 test('settings keep only known values', () => {
-  saveSettings({ sound: false, restAfterMin: 3, reminderMin: 7 });
-  expect(loadSettings()).toEqual({ sound: false, restAfterMin: 2, reminderMin: 2 });
-  saveSettings({ sound: true, restAfterMin: 5, reminderMin: 0 });
-  expect(loadSettings()).toEqual({ sound: true, restAfterMin: 5, reminderMin: 0 });
+  saveSettings({ sound: false, restAfterMin: 3, reminderMin: 7, alertStyle: 'loud', routineSort: 'name' });
+  expect(loadSettings()).toEqual({ sound: false, restAfterMin: 2, reminderMin: 2, alertStyle: 'urgent', routineSort: 'recent' });
+  saveSettings({ sound: true, restAfterMin: 5, reminderMin: 0, alertStyle: 'soft', routineSort: 'start' });
+  expect(loadSettings()).toEqual({ sound: true, restAfterMin: 5, reminderMin: 0, alertStyle: 'soft', routineSort: 'start' });
 });
 
 test('upsertTemplate inserts, then replaces by id', () => {
@@ -68,4 +68,14 @@ test('old tasks remain flexible and duplicate buffer flags do not create multipl
     { name: 'C', minutes: 5, type: 'buffer' }, { name: 'D', minutes: 5, type: 'unknown' },
   ] });
   expect(plan.tasks.map((t) => t.type)).toEqual([undefined, 'buffer', undefined, undefined]);
+});
+
+test('the last time a routine was used survives loading and saving', () => {
+  const { list } = upsertTemplate([], { id: 'r1', name: 'Manhã', deadline: '07:30', tasks: [{ name: 'A', minutes: 5 }] });
+  list[0].lastUsedAt = 1234;
+  saveTemplates(list);
+  expect(loadTemplates()[0].lastUsedAt).toBe(1234);
+  const updated = upsertTemplate(loadTemplates(), { id: 'r1', name: 'Manhã nova', deadline: '07:30', tasks: [{ name: 'A', minutes: 6 }] });
+  expect(updated.list[0]).toMatchObject({ name: 'Manhã nova', lastUsedAt: 1234 });
+  expect(normalizePlan({ name: 'x', deadline: '07:30', tasks: [], lastUsedAt: 'ontem' })).not.toHaveProperty('lastUsedAt');
 });

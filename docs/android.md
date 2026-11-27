@@ -23,7 +23,8 @@ apaga. No app, quem toca é o Android:
    duas vezes (`AlertStore.claim`).
 
 Os lembretes depois do fim da tarefa (§10 de specifications.md) também viram alarmes: até 30,
-cobrindo cerca de uma hora de atraso. Os sons curtos dos gestos (concluir, adiar, fim da rotina)
+cobrindo cerca de uma hora de atraso. As marcas de 5 min entram no plano até duas horas à frente;
+o plano avança a cada marca. O tipo de alerta (urgente ou suave) escolhe os tons do plano. Os sons curtos dos gestos (concluir, adiar, fim da rotina)
 tocam pela WebView, no volume de mídia, porque só acontecem com o app aberto.
 
 Os toques usam o **volume de alarme** (`USAGE_ALARM`): soam com o volume de mídia zerado.

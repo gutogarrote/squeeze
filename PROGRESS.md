@@ -57,6 +57,23 @@ telas conferidas no Chromium em larguras de 320 e 390 px. Publicado em squeeze.g
   reordenação nos dois sentidos, recarga e importação. Sem deploy desta branch.
 
 
+### 2026-11-27 — Folga que cresce, marcas de 5 min, tela de rotinas e encerramento único
+
+- Motor: com uma tarefa folga, o tempo que sobra ao concluir devolve às comprimidas o que
+  perderam (até a estimativa) e o resto vai para a folga (`giveFreed`). Sem folga, nada muda.
+- Alertas: toque leve a cada marca de 5 min acima dos últimos 5 (15, 10...), inclusive ao começar
+  numa marca; tipo de alerta urgente ou suave nos Ajustes; tudo também agendado como alarme no
+  Android (até 64 alarmes; o plano avança a cada 5 min).
+- O app abre na tela de rotinas (`screens/RoutinesScreen`), ordenável por última usada, horário
+  final, horário inicial ou manual (`lib/routineSort.js`, `lastUsedAt` nas rotinas salvas).
+- Margens das barras do sistema: `--safe-top`/`--safe-bottom` (env() ou as variáveis do
+  Capacitor) no topo das telas, no botão fixo inferior e no fim das janelas; cabeçalho do
+  planejamento com botões maiores.
+- Uma só janela de encerramento (Encerrar, Recomeçar com novo deadline, Editar rotina e Salvar
+  alterações só quando a rotina salva mudou); recomeçar rola até o deadline.
+- Verificação: lint sem avisos, 289 testes, build web e APK de debug; telas conferidas em
+  Chromium (Pixel 7) com barras simuladas de 40 px e 48 px. Não verificado em aparelho.
+
 ### 2026-11-20 — Compartilhar, sons, fim da rotina e reordenação
 
 - Execução: botão de compartilhar (link da rotina como está; folha do sistema ou cópia); tarefas

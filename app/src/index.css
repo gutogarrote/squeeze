@@ -4,7 +4,17 @@
 
 :root {
   color-scheme: dark;
+  /* System bars (status bar on top, navigation bar below). Browsers fill env(); the Android
+     app also gets --safe-area-inset-* from Capacitor. The larger of the two wins. */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }
+
+/* Screen edges that clear the system bars. */
+.pt-safe { padding-top: calc(var(--safe-top) + 0.75rem); }
+.pb-safe-bottom { padding-bottom: calc(var(--safe-bottom) + 1rem); }
+/* Room below the content for a fixed bottom button and the navigation bar. */
+.pb-safe-bar { padding-bottom: calc(var(--safe-bottom) + 8rem); }
 
 html,
 body {

@@ -4,6 +4,7 @@
 import { LEVEL } from './alerts';
 
 // [frequency Hz, start s, duration s, gain, wave]
+// Urgent alerts: bright and insistent, for when time is running out.
 export const TONES = {
   [LEVEL.five]: [[740, 0, 0.3, 0.3, 'triangle'], [988, 0.42, 0.4, 0.3, 'triangle']],
   [LEVEL.one]: [
@@ -17,7 +18,20 @@ export const TONES = {
   ],
   // Soft and short: the task is still running past its time.
   [LEVEL.reminder]: [[659, 0, 0.16, 0.2, 'sine'], [880, 0.2, 0.3, 0.18, 'sine']],
+  // Every 5 minutes left: two light taps.
+  [LEVEL.tick]: [[740, 0, 0.14, 0.2, 'triangle'], [740, 0.24, 0.18, 0.2, 'triangle']],
 };
+
+// Soft alerts: gentle sine chimes that mark the passage of time without alarm.
+export const SOFT_TONES = {
+  [LEVEL.five]: [[523, 0, 0.4, 0.14, 'sine'], [659, 0.45, 0.55, 0.14, 'sine']],
+  [LEVEL.one]: [[587, 0, 0.35, 0.15, 'sine'], [740, 0.4, 0.35, 0.15, 'sine'], [880, 0.8, 0.6, 0.14, 'sine']],
+  [LEVEL.zero]: [[784, 0, 0.45, 0.17, 'sine'], [659, 0.5, 0.45, 0.17, 'sine'], [523, 1, 0.9, 0.16, 'sine']],
+  [LEVEL.reminder]: [[659, 0, 0.35, 0.11, 'sine']],
+  [LEVEL.tick]: [[880, 0, 0.6, 0.09, 'sine']],
+};
+
+export const tonesFor = (level, style = 'urgent') => (style === 'soft' ? SOFT_TONES : TONES)[level];
 
 // Short answers to the user's own actions, quieter than any alert.
 export const FEEDBACK = {
@@ -73,5 +87,5 @@ function playTones(tones) {
   } catch (_) { /* Playback is best effort. */ }
 }
 
-export const playSound = (level) => playTones(TONES[level]);
+export const playSound = (level, style = 'urgent') => playTones(tonesFor(level, style));
 export const playFeedback = (name) => playTones(FEEDBACK[name]);

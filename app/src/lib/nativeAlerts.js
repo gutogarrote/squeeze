@@ -1,7 +1,7 @@
 // Alerts of the current task as absolute times, for the Android app: the system fires them as
 // exact alarms, so they sound with the screen off (specifications.md §10). Pure logic.
 import { LEVEL, MIN_MS } from './alerts';
-import { TONES } from './sound';
+import { tonesFor } from './sound';
 
 const THRESHOLDS = [
   { level: LEVEL.five, beforeMs: 5 * MIN_MS, title: 'Faltam 5 min' },
@@ -11,26 +11,41 @@ const THRESHOLDS = [
 // Overrun reminders scheduled ahead: enough for an hour, never more than this many alarms.
 export const MAX_REMINDERS = 30;
 const REMINDER_HORIZON_MS = 60 * MIN_MS;
+// 5-minute ticks scheduled ahead: two hours' worth; the plan moves forward as time passes.
+const FIVE_MS = 5 * MIN_MS;
+const TICK_HORIZON_MS = 2 * 60 * MIN_MS;
+const MARK_SLACK_MS = 1500;
 
 // One entry per threshold, past or future, then the overrun reminders. The key identifies one
 // crossing of one activation: the alarm and the web view both use it, and whichever comes
 // second stays silent. Giving the task more time moves the crossing and so re-arms the alert.
-export function alertPlan(view, nowMs, { reminderMs = 0 } = {}) {
+export function alertPlan(view, nowMs, { reminderMs = 0, style = 'urgent' } = {}) {
   const current = view?.current;
   if (!current) return [];
   const endMs = nowMs + current.remainingMs;
   const base = `${current.id}:${view.currentSinceMs}`;
   const plan = THRESHOLDS.map(({ level, beforeMs, title }) => {
     const atMs = endMs - beforeMs;
-    return { key: `${base}:${level}:${atMs}`, level, atMs, title, body: current.name, tones: TONES[level] };
+    return { key: `${base}:${level}:${atMs}`, level, atMs, title, body: current.name, tones: tonesFor(level, style) };
   });
+  // Ticks at 10, 15, 20... minutes left, from the activation on: the latest one already due
+  // stays in the plan (the web view plays it with its key), future ones up to the horizon.
+  for (let k = 2; endMs - k * FIVE_MS >= view.currentSinceMs - MARK_SLACK_MS; k += 1) {
+    const atMs = endMs - k * FIVE_MS;
+    if (atMs > nowMs + TICK_HORIZON_MS) continue;
+    if (atMs <= nowMs - FIVE_MS) break;
+    plan.push({
+      key: `${base}:t${k}:${atMs}`, level: LEVEL.tick, atMs,
+      title: `Faltam ${k * 5} min`, body: current.name, tones: tonesFor(LEVEL.tick, style),
+    });
+  }
   if (reminderMs > 0) {
     const count = Math.min(MAX_REMINDERS, Math.ceil(REMINDER_HORIZON_MS / reminderMs));
     for (let k = 1; k <= count; k += 1) {
       const atMs = endMs + k * reminderMs;
       plan.push({
         key: `${base}:r${k}:${atMs}`, level: LEVEL.reminder, atMs,
-        title: 'Tarefa ainda em andamento', body: current.name, tones: TONES[LEVEL.reminder],
+        title: 'Tarefa ainda em andamento', body: current.name, tones: tonesFor(LEVEL.reminder, style),
       });
     }
   }
@@ -42,7 +57,7 @@ export function alertPlan(view, nowMs, { reminderMs = 0 } = {}) {
 export function alertAt(plan, level, nowMs) {
   const matching = plan.filter((a) => a.level === level);
   const due = matching.filter((a) => a.atMs <= nowMs + 1000);
-  return due.length ? due[due.length - 1] : matching[0];
+  return due.length ? due.reduce((a, b) => (b.atMs > a.atMs ? b : a)) : matching[0];
 }
 
 export const planSignature = (plan) => plan.map((a) => `${a.key}|${a.body}`).join('\n');
